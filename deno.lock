@@ -202,6 +202,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@cliffy/ansi@1.0.0-rc.5",
+      "jsr:@cliffy/command@1.0.0-rc.5",
       "jsr:@cliffy/keycode@1.0.0-rc.5",
       "jsr:@cliffy/table@1.0.0-rc.5",
       "jsr:@lambdalisue/github-emoji@1.0.0",
