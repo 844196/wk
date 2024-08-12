@@ -1,0 +1,216 @@
+{
+  "version": "3",
+  "packages": {
+    "specifiers": {
+      "jsr:@cliffy/ansi@1.0.0-rc.5": "jsr:@cliffy/ansi@1.0.0-rc.5",
+      "jsr:@cliffy/command@1.0.0-rc.5": "jsr:@cliffy/command@1.0.0-rc.5",
+      "jsr:@cliffy/flags@1.0.0-rc.5": "jsr:@cliffy/flags@1.0.0-rc.5",
+      "jsr:@cliffy/internal@1.0.0-rc.5": "jsr:@cliffy/internal@1.0.0-rc.5",
+      "jsr:@cliffy/keycode@1.0.0-rc.5": "jsr:@cliffy/keycode@1.0.0-rc.5",
+      "jsr:@cliffy/table@1.0.0-rc.5": "jsr:@cliffy/table@1.0.0-rc.5",
+      "jsr:@lambdalisue/github-emoji@1.0.0": "jsr:@lambdalisue/github-emoji@1.0.0",
+      "jsr:@std/assert@^0.221.0": "jsr:@std/assert@0.221.0",
+      "jsr:@std/cli@1.0.0-rc.2": "jsr:@std/cli@1.0.0-rc.2",
+      "jsr:@std/collections@1.0.5": "jsr:@std/collections@1.0.5",
+      "jsr:@std/encoding@1.0.0-rc.2": "jsr:@std/encoding@1.0.0-rc.2",
+      "jsr:@std/fmt@~0.225.4": "jsr:@std/fmt@0.225.6",
+      "jsr:@std/io@~0.224.2": "jsr:@std/io@0.224.3",
+      "jsr:@std/path@1.0.2": "jsr:@std/path@1.0.2",
+      "jsr:@std/path@^0.221.0": "jsr:@std/path@0.221.0",
+      "jsr:@std/text@1.0.0-rc.1": "jsr:@std/text@1.0.0-rc.1",
+      "jsr:@std/yaml@1.0.2": "jsr:@std/yaml@1.0.2",
+      "npm:@types/node": "npm:@types/node@18.16.19",
+      "npm:rc-config-loader@4.1.3": "npm:rc-config-loader@4.1.3",
+      "npm:xdg-basedir@5.1.0": "npm:xdg-basedir@5.1.0",
+      "npm:zod@3.23.8": "npm:zod@3.23.8"
+    },
+    "jsr": {
+      "@cliffy/ansi@1.0.0-rc.5": {
+        "integrity": "85a4dba4da5d8278dcdfeea98672cd15706c244833f82edc60c61f410d9fc1a9",
+        "dependencies": [
+          "jsr:@cliffy/internal@1.0.0-rc.5",
+          "jsr:@std/encoding@1.0.0-rc.2",
+          "jsr:@std/fmt@~0.225.4",
+          "jsr:@std/io@~0.224.2"
+        ]
+      },
+      "@cliffy/command@1.0.0-rc.5": {
+        "integrity": "55e00a1d0ae38152fb275a89494a81ffb9b144eb9060107c0be5af46e1ba736c",
+        "dependencies": [
+          "jsr:@cliffy/flags@1.0.0-rc.5",
+          "jsr:@cliffy/internal@1.0.0-rc.5",
+          "jsr:@cliffy/table@1.0.0-rc.5",
+          "jsr:@std/fmt@~0.225.4",
+          "jsr:@std/text@1.0.0-rc.1"
+        ]
+      },
+      "@cliffy/flags@1.0.0-rc.5": {
+        "integrity": "bd33b7b399e0af353f5516d87a2d552d46ee7e7f4a6f0c0bc65fcce750710217",
+        "dependencies": [
+          "jsr:@std/text@1.0.0-rc.1"
+        ]
+      },
+      "@cliffy/internal@1.0.0-rc.5": {
+        "integrity": "1e8dca4fcfba1815bf1a899bb880e09f8b45284c352465ef8fb015887c1fc126"
+      },
+      "@cliffy/keycode@1.0.0-rc.5": {
+        "integrity": "2bcb3cb13873f0b758664394e003fc0cfa751af37a076ca9ec6e574df77aa3a8"
+      },
+      "@cliffy/table@1.0.0-rc.5": {
+        "integrity": "2b3e1b4764bbb56b0c39aeba95bc0bb551d9bd4475fbb6d1ce368c08b7ef9eb3",
+        "dependencies": [
+          "jsr:@std/cli@1.0.0-rc.2",
+          "jsr:@std/fmt@~0.225.4"
+        ]
+      },
+      "@lambdalisue/github-emoji@1.0.0": {
+        "integrity": "cc6b1ae72cde7a61397c886caf4013d0cc8d1108c70459192b2a7b0cccbfef2c",
+        "dependencies": [
+          "jsr:@std/path@^0.221.0"
+        ]
+      },
+      "@std/assert@0.221.0": {
+        "integrity": "a5f1aa6e7909dbea271754fd4ab3f4e687aeff4873b4cef9a320af813adb489a"
+      },
+      "@std/cli@1.0.0-rc.2": {
+        "integrity": "97dfae82b9f0e189768ebfa7a5da53375955b94bad0a1804f8e3b73563b03787"
+      },
+      "@std/collections@1.0.5": {
+        "integrity": "ab9eac23b57a0c0b89ba45134e61561f69f3d001f37235a248ed40be260c0c10"
+      },
+      "@std/encoding@1.0.0-rc.2": {
+        "integrity": "160d7674a20ebfbccdf610b3801fee91cf6e42d1c106dd46bbaf46e395cd35ef"
+      },
+      "@std/fmt@0.225.6": {
+        "integrity": "aba6aea27f66813cecfd9484e074a9e9845782ab0685c030e453a8a70b37afc8"
+      },
+      "@std/io@0.224.3": {
+        "integrity": "b402edeb99c6b3778d9ae3e9927bc9085b170b41e5a09bbb7064ab2ee394ae2f"
+      },
+      "@std/path@0.221.0": {
+        "integrity": "0a36f6b17314ef653a3a1649740cc8db51b25a133ecfe838f20b79a56ebe0095",
+        "dependencies": [
+          "jsr:@std/assert@^0.221.0"
+        ]
+      },
+      "@std/path@1.0.2": {
+        "integrity": "a452174603f8c620bd278a380c596437a9eef50c891c64b85812f735245d9ec7"
+      },
+      "@std/text@1.0.0-rc.1": {
+        "integrity": "34c722203e87ee12792c8d4a0cd2ee0e001341cbce75b860fc21be19d62232b0"
+      },
+      "@std/yaml@1.0.2": {
+        "integrity": "b343ae4da47c8f22a04bcab687cf36fc2926b7fb2de8f8ef06fc59499e55b632"
+      }
+    },
+    "npm": {
+      "@types/node@18.16.19": {
+        "integrity": "sha512-IXl7o+R9iti9eBW4Wg2hx1xQDig183jj7YLn8F7udNceyfkbn1ZxmzZXuak20gR40D7pIkIY1kYGx5VIGbaHKA==",
+        "dependencies": {}
+      },
+      "argparse@2.0.1": {
+        "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+        "dependencies": {}
+      },
+      "debug@4.3.4": {
+        "integrity": "sha512-PRWFHuSU3eDtQJPvnNY7Jcket1j0t5OuOsFzPPzsekD52Zl8qUfFIPEiswXqIvHWGVHOgX+7G/vCNNhehwxfkQ==",
+        "dependencies": {
+          "ms": "ms@2.1.2"
+        }
+      },
+      "js-yaml@4.1.0": {
+        "integrity": "sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==",
+        "dependencies": {
+          "argparse": "argparse@2.0.1"
+        }
+      },
+      "json5@2.2.3": {
+        "integrity": "sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==",
+        "dependencies": {}
+      },
+      "ms@2.1.2": {
+        "integrity": "sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==",
+        "dependencies": {}
+      },
+      "rc-config-loader@4.1.3": {
+        "integrity": "sha512-kD7FqML7l800i6pS6pvLyIE2ncbk9Du8Q0gp/4hMPhJU6ZxApkoLcGD8ZeqgiAlfwZ6BlETq6qqe+12DUL207w==",
+        "dependencies": {
+          "debug": "debug@4.3.4",
+          "js-yaml": "js-yaml@4.1.0",
+          "json5": "json5@2.2.3",
+          "require-from-string": "require-from-string@2.0.2"
+        }
+      },
+      "require-from-string@2.0.2": {
+        "integrity": "sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==",
+        "dependencies": {}
+      },
+      "xdg-basedir@5.1.0": {
+        "integrity": "sha512-GCPAHLvrIH13+c0SuacwvRYj2SxJXQ4kaVTT5xgL3kPrz56XxkF21IGhjSE1+W0aw7gpBWRGXLCPnPby6lSpmQ==",
+        "dependencies": {}
+      },
+      "zod@3.23.8": {
+        "integrity": "sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==",
+        "dependencies": {}
+      }
+    }
+  },
+  "remote": {
+    "https://deno.land/std@0.192.0/_util/asserts.ts": "178dfc49a464aee693a7e285567b3d0b555dc805ff490505a8aae34f9cfb1462",
+    "https://deno.land/std@0.192.0/_util/os.ts": "d932f56d41e4f6a6093d56044e29ce637f8dcc43c5a90af43504a889cf1775e3",
+    "https://deno.land/std@0.192.0/path/_constants.ts": "e49961f6f4f48039c0dfed3c3f93e963ca3d92791c9d478ac5b43183413136e0",
+    "https://deno.land/std@0.192.0/path/_interface.ts": "6471159dfbbc357e03882c2266d21ef9afdb1e4aa771b0545e90db58a0ba314b",
+    "https://deno.land/std@0.192.0/path/_util.ts": "d7abb1e0dea065f427b89156e28cdeb32b045870acdf865833ba808a73b576d0",
+    "https://deno.land/std@0.192.0/path/common.ts": "ee7505ab01fd22de3963b64e46cff31f40de34f9f8de1fff6a1bd2fe79380000",
+    "https://deno.land/std@0.192.0/path/glob.ts": "d479e0a695621c94d3fd7fe7abd4f9499caf32a8de13f25073451c6ef420a4e1",
+    "https://deno.land/std@0.192.0/path/mod.ts": "f065032a7189404fdac3ad1a1551a9ac84751d2f25c431e101787846c86c79ef",
+    "https://deno.land/std@0.192.0/path/posix.ts": "8b7c67ac338714b30c816079303d0285dd24af6b284f7ad63da5b27372a2c94d",
+    "https://deno.land/std@0.192.0/path/separator.ts": "0fb679739d0d1d7bf45b68dacfb4ec7563597a902edbaf3c59b50d5bcadd93b1",
+    "https://deno.land/std@0.192.0/path/win32.ts": "d186344e5583bcbf8b18af416d13d82b35a317116e6460a5a3953508c3de5bba",
+    "https://deno.land/std@0.221.0/assert/assert.ts": "bec068b2fccdd434c138a555b19a2c2393b71dfaada02b7d568a01541e67cdc5",
+    "https://deno.land/std@0.221.0/assert/assertion_error.ts": "9f689a101ee586c4ce92f52fa7ddd362e86434ffdf1f848e45987dc7689976b8",
+    "https://deno.land/std@0.221.0/console/_data.json": "cf2cc9d039a192b3adbfe64627167c7e6212704c888c25c769fc8f1709e1e1b8",
+    "https://deno.land/std@0.221.0/console/_run_length.ts": "7da8642a0f4f41ac27c0adb1364e18886be856c1d08c5cce6c6b5c00543c8722",
+    "https://deno.land/std@0.221.0/console/unicode_width.ts": "d92f085c0ab9c7ab171e4e7862dfd9d3a36ffd369939be5d3e1140ec58bc820f",
+    "https://deno.land/std@0.221.0/encoding/_util.ts": "beacef316c1255da9bc8e95afb1fa56ed69baef919c88dc06ae6cb7a6103d376",
+    "https://deno.land/std@0.221.0/encoding/base64.ts": "8ccae67a1227b875340a8582ff707f37b131df435b07080d3bb58e07f5f97807",
+    "https://deno.land/std@0.221.0/fmt/colors.ts": "d239d84620b921ea520125d778947881f62c50e78deef2657073840b8af9559a",
+    "https://deno.land/std@0.221.0/io/types.ts": "acecb3074c730b5ff487ba4fe9ce51e67bd982aa07c95e5f5679b7b2f24ad129",
+    "https://deno.land/x/cliffy@v1.0.0-rc.4/ansi/ansi.ts": "481e382126922ff686dd664f4bae6bc44df44bc5ed883c0f5f8a8b3776e5a983",
+    "https://deno.land/x/cliffy@v1.0.0-rc.4/ansi/ansi_escapes.ts": "193b3c3a4e520274bd8322ca4cab1c3ce38070bed1898cb2ade12a585dddd7c9",
+    "https://deno.land/x/cliffy@v1.0.0-rc.4/ansi/chain.ts": "eca61b1b64cad7b9799490c12c7aa5538d0f63ac65a73ddb6acac8b35f0a5323",
+    "https://deno.land/x/cliffy@v1.0.0-rc.4/ansi/cursor_position.ts": "7a07410b312885db92ada9ecab095db0ff72ffe339b4e2d31e8c705f2c60c7fa",
+    "https://deno.land/x/cliffy@v1.0.0-rc.4/ansi/deps.ts": "4d93b041735f4967fa56c7aeb6be490c07522fb81c419f5fe3bef6b72190db8c",
+    "https://deno.land/x/cliffy@v1.0.0-rc.4/ansi/tty.ts": "a42ec713ff18186492c4b5184039d4f54174065773fa5833330b543c53bb4d79",
+    "https://deno.land/x/cliffy@v1.0.0-rc.4/keycode/_key_codes.ts": "917f0a2da0dbace08cf29bcfdaaa2257da9fe7e705fff8867d86ed69dfb08cfe",
+    "https://deno.land/x/cliffy@v1.0.0-rc.4/keycode/key_code.ts": "730fa675ca12fc2a99ba718aa8dbebb1f2c89afd47484e30ef3cb705ddfca367",
+    "https://deno.land/x/cliffy@v1.0.0-rc.4/keycode/mod.ts": "981b828bddada634e62a2a067b9d1592986180c4e920eb55e0a43cc085eb98ab",
+    "https://deno.land/x/cliffy@v1.0.0-rc.4/table/_layout.ts": "73a9bcb8a87b3a6817c4c9d2a31a21b874a7dd690ade1c64c9a1f066d628d626",
+    "https://deno.land/x/cliffy@v1.0.0-rc.4/table/_utils.ts": "13390db3f11977b7a4fc1202fa8386be14696b475a7f46a65178354f9a6640b7",
+    "https://deno.land/x/cliffy@v1.0.0-rc.4/table/border.ts": "5c6e9ef5078c6930169aacb668b274bdbb498461c724a7693ac9270fe9d3f5d5",
+    "https://deno.land/x/cliffy@v1.0.0-rc.4/table/cell.ts": "65e3ee699c3cebeb4d4d44e8f156e37a8532a0f317359d73178a95724d3f9267",
+    "https://deno.land/x/cliffy@v1.0.0-rc.4/table/column.ts": "cf14009f2cb14bad156f879946186c1893acdc6a2fee6845db152edddb6a2714",
+    "https://deno.land/x/cliffy@v1.0.0-rc.4/table/consume_words.ts": "369d065dbf7f15c664ea8523e0ef750fb952aea6d88e146c375e64aec9503052",
+    "https://deno.land/x/cliffy@v1.0.0-rc.4/table/deps.ts": "cbb896e8d7a6b5e3c2b9dda7d16638c202d9b46eb738c2dae1fa9480d8091486",
+    "https://deno.land/x/cliffy@v1.0.0-rc.4/table/mod.ts": "40f148428acbfffa270f7077c403b3893797d9e454a74ccb41a8434367351326",
+    "https://deno.land/x/cliffy@v1.0.0-rc.4/table/row.ts": "79eb1468aafdd951e5963898cdafe0752d4ab4c519d5f847f3d8ecb8fe857d4f",
+    "https://deno.land/x/cliffy@v1.0.0-rc.4/table/table.ts": "298671e72e61f1ab18b42ae36643181993f79e29b39dc411fdc6ffd53aa04684",
+    "https://deno.land/x/color@v0.3.0/mod.ts": "7db5473061c484f0e830ee883ab0764bb55999acfd6a182919540ac9efa830a2",
+    "https://deno.land/x/github_emoji@v0.1.1/emojis.json": "32ec250b02b7afb313d289df6842e6e57d8001396ea34c30597dc6b1b609e8e5",
+    "https://deno.land/x/github_emoji@v0.1.1/mod.ts": "4ce30408db7ac4e807afd9fafc25b129a46c8ea63763c3f0ad0af5314c4d07a5"
+  },
+  "workspace": {
+    "dependencies": [
+      "jsr:@cliffy/ansi@1.0.0-rc.5",
+      "jsr:@cliffy/keycode@1.0.0-rc.5",
+      "jsr:@cliffy/table@1.0.0-rc.5",
+      "jsr:@lambdalisue/github-emoji@1.0.0",
+      "jsr:@std/collections@1.0.5",
+      "jsr:@std/path@1.0.2",
+      "jsr:@std/yaml@1.0.2",
+      "npm:rc-config-loader@4.1.3",
+      "npm:xdg-basedir@5.1.0",
+      "npm:zod@3.23.8"
+    ]
+  }
+}
