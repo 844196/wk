@@ -1,0 +1,37 @@
+version: '3'
+
+set:
+  - errexit
+  - nounset
+  - pipefail
+
+tasks:
+  check:
+    deps:
+      - version_file
+    cmds:
+      - deno fmt --check
+      - deno lint
+      - deno check src/cli.ts
+
+  compile:
+    deps:
+      - version_file
+    vars:
+      TARGETS:
+        - x86_64-unknown-linux-gnu
+        - aarch64-unknown-linux-gnu
+        - x86_64-pc-windows-msvc
+        - x86_64-apple-darwin
+        - aarch64-apple-darwin
+    cmds:
+      -
+        for:
+          var: TARGETS
+          as: TARGET
+        cmd: deno compile --frozen --allow-all --target {{.TARGET}} --output dist/wk-{{.TARGET}} src/cli.ts
+
+  version_file:
+    vars:
+      VERSION: '{{.VERSION | default "development"}}'
+    cmd: echo '"{{.VERSION}}"' > src/version.generated.json
