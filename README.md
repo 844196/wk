@@ -1,7 +1,7 @@
 <div align="center">
   <p>&nbsp;</p>
 
-  <img src="https://github.com/user-attachments/assets/510d7972-bae9-4775-ab7c-00a6acbc1db5" />
+  <img src="https://github.com/user-attachments/assets/07e6f86c-9f5c-4716-a07a-140dcb38efca" />
 
   <h1>wk</h1>
 
