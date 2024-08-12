@@ -1,11 +1,8 @@
 <div align="center">
-  <p>&nbsp;</p>
-
-  <img src="https://github.com/user-attachments/assets/07e6f86c-9f5c-4716-a07a-140dcb38efca" />
-
-  <h1>wk</h1>
-
-  <small><i>:keyboard: which-key like menu for shell</i></small>
+<p>&nbsp;</p>
+<img src="https://github.com/user-attachments/assets/07e6f86c-9f5c-4716-a07a-140dcb38efca" />
+<h1>wk</h1>
+<small><i>:keyboard: which-key like menu for shell</i></small>
 </div>
 
 ## :package: Installation
