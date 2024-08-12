@@ -1,0 +1,51 @@
+name: Upload release
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup aqua
+        uses: aquaproj/aqua-installer@v3.0.1
+        with:
+          aqua_version: v2.28.0
+
+      - name: Dump ".mise.toml"
+        id: dump_mise_toml
+        run: |
+          {
+            echo 'mise_toml<<EOF'
+            cat .mise.toml
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Setup mise
+        uses: jdx/mise-action@v2
+        with:
+          version: 2024.5.16
+          install: true
+          cache: true
+          mise_toml: ${{ steps.dump_mise_toml.outputs.mise_toml }}
+
+      - name: Run compile
+        run: VERSION=${{ github.event.release.tag_name }} task compile
+
+      - name: Upload binaries
+        run: gh release upload ${{ github.event.release.tag_name }} dist/*
+        env:
+          GH_TOKEN: ${{ github.token }}
