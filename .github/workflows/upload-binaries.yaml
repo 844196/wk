@@ -1,4 +1,4 @@
-name: Upload release
+name: Upload binaries
 
 on:
   release:
@@ -13,8 +13,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check:
-    name: Check
+  upload:
+    name: Upload
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
