@@ -1,0 +1,117 @@
+{
+  "type": "object",
+  "properties": {
+    "outputDelimiter": {
+      "type": "string"
+    },
+    "timeout": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "symbols": {
+      "type": "object",
+      "properties": {
+        "prompt": {
+          "type": "string"
+        },
+        "breadcrumb": {
+          "type": "string"
+        },
+        "separator": {
+          "type": "string"
+        },
+        "group": {
+          "type": "string"
+        },
+        "keys": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "colors": {
+      "type": "object",
+      "properties": {
+        "prompt": {
+          "$ref": "#/definitions/Color"
+        },
+        "breadcrumb": {
+          "$ref": "#/definitions/Color"
+        },
+        "separator": {
+          "$ref": "#/definitions/Color"
+        },
+        "group": {
+          "$ref": "#/definitions/Color"
+        },
+        "inputKeys": {
+          "$ref": "#/definitions/Color"
+        },
+        "lastInputKey": {
+          "$ref": "#/definitions/Color"
+        },
+        "bindingKey": {
+          "$ref": "#/definitions/Color"
+        },
+        "bindingIcon": {
+          "$ref": "#/definitions/Color"
+        },
+        "bindingDescription": {
+          "$ref": "#/definitions/Color"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Color": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ANSIColor"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "color": {
+              "$ref": "#/definitions/ANSIColor"
+            },
+            "attrs": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "bold",
+                  "dim",
+                  "italic",
+                  "underline",
+                  "inverse",
+                  "hidden",
+                  "strikethrough"
+                ]
+              },
+              "minItems": 1
+            }
+          },
+          "required": [
+            "color",
+            "attrs"
+          ]
+        }
+      ]
+    },
+    "ANSIColor": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": -1,
+          "maximum": 255
+        },
+        {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        }
+      ]
+    }
+  }
+}
