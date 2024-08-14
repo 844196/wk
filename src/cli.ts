@@ -7,11 +7,13 @@ import { z } from 'zod'
 import { XDG_CONFIG_HOME } from './const.ts'
 import { AbortError, KeyParseError, UndefinedKeyError } from './errors.ts'
 import { Dependencies, main } from './main.ts'
-import * as tty from './tty.ts'
+import { TUI } from './tui.ts'
 import { type Binding, BindingSchema } from './types/Binding.ts'
 import { type Context, ContextSchema, defaultContext } from './types/Context.ts'
 import { getKeySymbol } from './ui.ts'
 import version from './version.generated.json' with { type: 'json' }
+import { renderPrompt } from './ui.ts'
+import { renderTable } from './ui.ts'
 
 const cli = new Command()
   .name('wk')
@@ -51,17 +53,18 @@ cli
       Deno.open('/dev/tty', { read: true, write: false }),
       Deno.open('/dev/tty', { read: false, write: true }),
     ])
+    const tui = new TUI(ttyReader, ttyWriter)
 
     let timeoutTimerId: number | undefined
     const handleTimeout = () => {
-      tty.clear({ writer: ttyWriter })
+      tui.close()
       console.error('Timeout')
       Deno.exit(2)
     }
 
     const deps: Dependencies = {
-      receiveKeyPress: () => tty.receiveKeyPress({ reader: ttyReader }),
-      draw: (inputKeys, bindings) => tty.draw({ reader: ttyReader, writer: ttyWriter }, ctx, inputKeys, bindings),
+      receiveKeyPress: () => tui.receiveKeyPress(),
+      draw: (inputKeys, bindings) => tui.draw(renderPrompt(ctx, inputKeys), renderTable(ctx, bindings).toString()),
       setTimeoutTimer: () => {
         if (ctx.timeout > 0) {
           timeoutTimerId = setTimeout(handleTimeout, ctx.timeout)
@@ -73,6 +76,8 @@ cli
     }
 
     try {
+      tui.init()
+
       const {
         key: _,
         desc: __,
@@ -82,6 +87,8 @@ cli
         delimiter: definedDelimiter,
         ...rest
       } = await main(deps, bindings)
+
+      tui.close()
 
       const outputs = [buffer]
       for (const [k, v] of Object.entries(rest)) {
@@ -99,27 +106,25 @@ cli
 
       const delimiter = typeof definedDelimiter === 'string' ? definedDelimiter : ctx.outputDelimiter
 
-      tty.clear({ writer: ttyWriter })
-
       console.log(outputs.join(delimiter))
     } catch (e: unknown) {
       if (e instanceof AbortError) {
-        tty.clear({ writer: ttyWriter })
+        tui.close()
         console.error('Abort')
         Deno.exit(1)
       } else if (e instanceof UndefinedKeyError) {
-        tty.clear({ writer: ttyWriter })
+        tui.close()
         console.error(`"${e.getInputKeys().map((k) => getKeySymbol(ctx, k)).join(' ')}" is undefined`)
         Deno.exit(3)
       } else if (e instanceof KeyParseError) {
-        tty.clear({ writer: ttyWriter })
+        tui.close()
         console.error('Failed to parse key', e.getKey())
         Deno.exit(4)
       } else {
         throw e
       }
     } finally {
-      tty.showCursor({ writer: ttyWriter })
+      tui.showCursor()
     }
   })
 

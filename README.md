@@ -17,7 +17,8 @@
 space-wk() {
   case $BUFFER in
     '')
-      tput cub 9999
+      # Avoid cursor flickering
+      echo -n $'\x1b[?25l\x1b[0`' >$TTY
 
       local res=''
       res=$(wk --no-validation 2>&1)
