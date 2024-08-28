@@ -31,7 +31,7 @@ cli
 
       let config
       if (validation) {
-        config = ContextSchema.partial().parse(found.config)
+        config = ContextSchema.deepPartial().parse(found.config) as Partial<Context>
       } else {
         config = found.config as unknown as Context
       }
