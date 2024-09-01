@@ -74,7 +74,13 @@ const plainBorder = Object.entries(defaultBorder)
 function renderTableRow(ctx: Context, binding: Binding) {
   const icon = typeof binding.icon === 'string' ? color(emojify(binding.icon), ctx.colors.bindingIcon) : ''
   const group = binding.type === 'bindings' ? color(ctx.symbols.group, ctx.colors.group) : ''
-  const desc = color(binding.desc, ctx.colors.bindingDescription)
+
+  let desc = ''
+  if (binding.type === 'command') {
+    desc = color(binding.desc ?? binding.buffer, ctx.colors.bindingDescription)
+  } else {
+    desc = color(binding.desc, ctx.colors.bindingDescription)
+  }
 
   return [
     color(getKeySymbol(ctx, binding.key), ctx.colors.bindingKey),

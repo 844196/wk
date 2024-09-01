@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 type Base = {
   key: string
-  desc: string
+  desc?: string
   icon?: string
 }
 
@@ -14,6 +14,7 @@ export type Command = Base & {
 
 type Bindings = Base & {
   type: 'bindings'
+  desc: string
   bindings: TmpBinding[]
 }
 
@@ -23,13 +24,13 @@ type TmpBinding = Command | Bindings
 
 const BaseSchema = z.object({
   key: z.string().min(1),
-  desc: z.string(),
   icon: z.string().optional(),
 })
 
 const CommandSchema = BaseSchema
   .extend({
     type: z.literal('command'),
+    desc: z.string().optional(),
     buffer: z.string(),
   })
   .and(z.record(z.string().or(z.boolean())))
@@ -37,6 +38,7 @@ const CommandSchema = BaseSchema
 const BindingsSchema: z.ZodType<Bindings> = z.lazy(() =>
   BaseSchema.extend({
     type: z.literal('bindings'),
+    desc: z.string(),
     bindings: z.array(BindingSchema).min(1),
   })
 )
