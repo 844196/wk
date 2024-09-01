@@ -14,7 +14,7 @@
   "definitions": {
     "Command": {
       "type": "object",
-      "required": ["key", "desc", "type", "buffer"],
+      "required": ["key", "type", "buffer"],
       "properties": {
         "key": {
           "type": "string",
