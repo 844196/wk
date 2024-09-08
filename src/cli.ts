@@ -13,11 +13,29 @@ import { getKeySymbol } from './ui.ts'
 import version from './version.generated.json' with { type: 'json' }
 import { renderPrompt } from './ui.ts'
 import { renderTable } from './ui.ts'
+import { Eta } from '@eta-dev/eta'
+import widgetTemplate from './widget.generated.json' with { type: 'json' }
 
 const cli = new Command()
   .name('wk')
   .version(version)
   .versionOption('-v, --version', 'Show the version number for this program.', { global: true })
+
+const widget = new Command()
+  .description('Outputs shell widget source code.')
+  .arguments('<shell:string>')
+  .option('--bindkey <key>', 'Bind the widget to the key.', { default: '^G' })
+  .option('--no-bindkey', 'Do not bind the widget to the key.')
+  .action(({ bindkey }) => {
+    const eta = new Eta()
+
+    const rendered = eta.renderString(widgetTemplate, {
+      wk_path: Deno.execPath(),
+      bindkey,
+    })
+
+    console.log(rendered)
+  })
 
 const run = new Command()
   .description('Run the workflow.')
@@ -76,8 +94,7 @@ const run = new Command()
     let timeoutTimerId: number | undefined
     const handleTimeout = () => {
       tui.close()
-      console.error('Timeout')
-      Deno.exit(2)
+      Deno.exit(4)
     }
 
     const deps: Dependencies = {
@@ -128,16 +145,15 @@ const run = new Command()
     } catch (e: unknown) {
       if (e instanceof AbortError) {
         tui.close()
-        console.error('Abort')
-        Deno.exit(1)
+        Deno.exit(3)
       } else if (e instanceof UndefinedKeyError) {
         tui.close()
         console.error(`"${e.getInputKeys().map((k) => getKeySymbol(ctx, k)).join(' ')}" is undefined`)
-        Deno.exit(3)
+        Deno.exit(5)
       } else if (e instanceof KeyParseError) {
         tui.close()
         console.error('Failed to parse key', e.getKey())
-        Deno.exit(4)
+        Deno.exit(6)
       } else {
         throw e
       }
@@ -147,5 +163,6 @@ const run = new Command()
   })
 
 await cli
+  .command('widget', widget)
   .command('run', run)
   .parse(Deno.args)

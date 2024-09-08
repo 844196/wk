@@ -7,66 +7,126 @@
 
 ## :package: Installation
 
-<https://github.com/844196/wk/releases>
+1. Download the latest release and put into your `$PATH`:
 
-## :gear: Configuration example (zsh)
+   <https://github.com/844196/wk/releases/latest>
 
-```shell
-# $ZDOTDIR/.zshrc
+2. Activate in `$ZDOTDIR/.zshrc`:
 
-space-wk() {
-  case $BUFFER in
-    '')
-      # Avoid cursor flickering
-      echo -n $'\x1b[?25l\x1b[0`' >$TTY
+   ```shell
+   # Register a widget with the name "_wk_widget", and bind it to the ^G.
+   eval "$(wk widget zsh)"
+   ```
 
-      local res=''
-      res=$(wk run --no-validation 2>&1)
-      local wk_exit=$?
+3. Restart zsh.
 
-      zle redisplay
+> [!TIP]
+> If you want to change the trigger key, change it as follows:
+>
+> ```shell
+> eval "$(wk widget zsh --bindkey '^T')"
+> ```
+>
+> If you want to register only the widget, change it as follows:
+>
+> ```shell
+> eval "$(wk widget zsh --no-bindkey)"
+> ```
 
-      case $wk_exit in
-        0)
-          # NOOP
-          ;;
-        1|2)
-          # Abort, Timeout
-          return
-          ;;
-        *)
-          zle -M "wk: $res"
-          return $wk_exit
-          ;;
-      esac
+## :gear: Configuration
 
-      res=("${(@ps:\t:)res}")
+### Config
 
-      if [[ "${res[(rb:2:)eval:*]}" == 'eval:true' ]]; then
-        BUFFER=${(e)res[1]}
-      else
-        BUFFER=${res[1]}
-      fi
-      CURSOR=${#BUFFER}
+`${XDG_CONFIG_HOME:-$HOME/.config}/wk/config.yaml`
 
-      case "${res[(rb:2:)trigger:*]}" in
-        trigger:ACCEPT)
-          zle accept-line
-          ;;
-        trigger:COMPLETE)
-          zle expand-or-complete
-          ;;
-      esac
+```yaml
+---
+timeout: 60000
+symbols:
+  prompt: "❯ "
+colors:
+  prompt: 8
+  inputKeys:
+    color: 8
+    attrs: [dim]
+  breadcrumb:
+    color: 8
+    attrs: [dim]
+  lastInputKey:
+    color: 6
+    attrs: [underline]
+  bindingKey: 5
+  separator:
+    color: 5
+    attrs: [dim]
+  group: 8
+  bindingIcon: 8
+  bindingDescription: 8
+```
 
-      zle redisplay
-      ;;
+See [schemas/config.json](./schemas/config.json) for more details.
 
-    *)
-      zle self-insert
-      ;;
-  esac
-}
+### Global bindings
 
-zle -N space-wk
-bindkey ' ' space-wk
+`${XDG_CONFIG_HOME:-$HOME/.config}/wk/bindings.yaml`
+
+```yaml
+---
+- key: g
+  desc: Git
+  type: bindings
+  bindings:
+    - key: p
+      desc: Push/Pull
+      type: bindings
+      bindings:
+        - key: return
+          desc: git push
+          type: command
+          buffer: 'git push origin $(git symbolic-ref --short HEAD)'
+          eval: true
+        - key: f
+          desc: git push -f
+          type: command
+          buffer: 'git push --force-with-lease --force-if-includes origin $(git symbolic-ref --short HEAD)'
+          eval: true
+        - key: l
+          type: command
+          buffer: 'git pull'
+          accept: true
+- key: y
+  desc: Yank
+  type: bindings
+  bindings:
+    - key: .
+      desc: Copy $PWD
+      type: command
+      buffer: ' echo -ne "\e]52;c;$(base64 <(pwd | tee >$TTY | sed -z ''$s/\n$//''))\a"'
+      accept: true
+```
+
+See [schemas/bindings.json](./schemas/bindings.json) for more details.
+
+### Local bindings
+
+`$PWD/wk.bindings.yaml`
+
+```yaml
+---
+- key: m
+  desc: Major
+  type: bindings
+  bindings:
+    - key: b
+      type: command
+      buffer: 'npm run build'
+      accept: true
+    - key: l
+      type: command
+      buffer: 'npm run lint'
+      accept: true
+    - key: t
+      type: command
+      buffer: 'npm run test'
+      accept: true
 ```
