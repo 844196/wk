@@ -35,6 +35,12 @@
         },
         "delimiter": {
           "type": "string"
+        },
+        "eval": {
+          "type": "boolean"
+        },
+        "accept": {
+          "type": "boolean"
         }
       },
       "additionalProperties": {

@@ -1,0 +1,50 @@
+_wk_widget() {
+  local opts
+  zstyle -a ':wk:*' options opts || opts=()
+
+  local res=''
+  res=$(<%= it.wk_path %> run ${=opts} 2>&1)
+  local wk_exit=$?
+
+  zle redisplay
+  echo -n $'\x1b[?25h' >$TTY # Ensure cursor is visible
+
+  case $wk_exit in
+    0)
+      # NOOP
+      ;;
+    3|4)
+      # Abort, Timeout
+      return
+      ;;
+    *)
+      # 1: General errors
+      # 2: Invalid arguments or options error
+      # 5: No match error
+      # 6: Key parse error
+      # *: Unknown errors
+      zle -M "wk: $res"
+      return $wk_exit
+      ;;
+  esac
+
+  reply=("${(@ps:\t:)res}")
+
+  if [[ "${reply[(rb:2:)eval:*]}" == 'eval:true' ]]; then
+    BUFFER=${(e)reply[1]}
+  else
+    BUFFER=${reply[1]}
+  fi
+  CURSOR=${#BUFFER}
+
+  if [[ "${reply[(rb:2:)accept:*]}" == 'accept:true' ]]; then
+    local accept_widget
+    zstyle -s ':wk:*' accept-widget accept_widget || accept_widget='accept-line'
+    zle $accept_widget
+  fi
+}
+
+zle -N _wk_widget
+<% if (typeof it.bindkey === 'string') { %>
+bindkey '<%= it.bindkey %>' _wk_widget
+<% } %>

@@ -1,2 +1,4 @@
+.task/
 dist/
 src/version.generated.json
+src/widget.generated.json

@@ -3,3 +3,4 @@ registries:
     ref: v4.212.0
 packages:
   - name: go-task/task@v3.38.0
+  - name: jqlang/jq@jq-1.7.1
