@@ -1,7 +1,6 @@
 import { Command } from '@cliffy/command'
 import { deepMerge } from '@std/collections'
 import { join as joinPath } from '@std/path'
-import { parse as parseYaml } from '@std/yaml'
 import { rcFile } from 'rc-config-loader'
 import { z } from 'zod'
 import { XDG_CONFIG_HOME } from './const.ts'
@@ -22,7 +21,7 @@ const cli = new Command()
 
 cli
   .option('--no-validation', 'Skip validation of the configuration files.')
-  .action(async ({ validation = true }) => {
+  .action(async ({ validation: shouldValidation = true }) => {
     const ctx = (() => {
       const found = rcFile('wk', { configFileName: joinPath(XDG_CONFIG_HOME, 'wk', 'config') })
       if (found === undefined) {
@@ -30,7 +29,7 @@ cli
       }
 
       let config
-      if (validation) {
+      if (shouldValidation) {
         config = ContextSchema.deepPartial().parse(found.config) as Partial<Context>
       } else {
         config = found.config as unknown as Context
@@ -40,13 +39,31 @@ cli
     })()
 
     const bindings = (() => {
-      const found = parseYaml(Deno.readTextFileSync(joinPath(XDG_CONFIG_HOME, 'wk', 'bindings.yaml')))
-
-      if (validation) {
-        return z.array(BindingSchema).parse(found)
+      const foundGlobal = rcFile('wk', { configFileName: joinPath(XDG_CONFIG_HOME, 'wk', 'bindings') })
+      let globalBindings: Binding[]
+      if (foundGlobal === undefined) {
+        globalBindings = []
       } else {
-        return found as unknown as Binding[]
+        if (shouldValidation) {
+          globalBindings = z.array(BindingSchema).parse(foundGlobal.config)
+        } else {
+          globalBindings = foundGlobal.config as unknown as Binding[]
+        }
       }
+
+      const foundLocal = rcFile('wk', { configFileName: 'wk.bindings' })
+      let localBindings: Binding[]
+      if (foundLocal === undefined) {
+        localBindings = []
+      } else {
+        if (shouldValidation) {
+          localBindings = z.array(BindingSchema).parse(foundLocal.config)
+        } else {
+          localBindings = foundLocal.config as unknown as Binding[]
+        }
+      }
+
+      return [...globalBindings, ...localBindings]
     })()
 
     const [ttyReader, ttyWriter] = await Promise.all([
