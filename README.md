@@ -21,7 +21,7 @@ space-wk() {
       echo -n $'\x1b[?25l\x1b[0`' >$TTY
 
       local res=''
-      res=$(wk --no-validation 2>&1)
+      res=$(wk run --no-validation 2>&1)
       local wk_exit=$?
 
       zle redisplay
