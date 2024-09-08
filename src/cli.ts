@@ -19,7 +19,8 @@ const cli = new Command()
   .version(version)
   .versionOption('-v, --version', 'Show the version number for this program.', { global: true })
 
-cli
+const run = new Command()
+  .description('Run the workflow.')
   .option('--no-validation', 'Skip validation of the configuration files.')
   .action(async ({ validation: shouldValidation = true }) => {
     const ctx = (() => {
@@ -145,4 +146,6 @@ cli
     }
   })
 
-await cli.parse(Deno.args)
+await cli
+  .command('run', run)
+  .parse(Deno.args)
