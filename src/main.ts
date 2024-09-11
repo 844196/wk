@@ -1,10 +1,10 @@
-import { type KeyCode } from '@cliffy/keycode'
+import { keypress, KeyPressEvent } from '@cliffy/keypress'
 import { PRINTABLE_ASCII } from './const.ts'
 import { AbortError, KeyParseError, UndefinedKeyError } from './errors.ts'
 import { type Binding, type Command } from './types/Binding.ts'
 
 export type Dependencies = {
-  receiveKeyPress: () => AsyncGenerator<KeyCode, void>
+  receiveKeyPress: () => AsyncIterator<KeyPressEvent, PromiseLike<KeyPressEvent>>
   draw: (inputKeys: string[], bindings: Binding[]) => unknown
   setTimeoutTimer: () => unknown
   clearTimeoutTimer: () => unknown
@@ -17,18 +17,18 @@ export async function main(deps: Dependencies, bindings: Binding[]): Promise<Com
   deps.draw(inputKeys, bindings)
   deps.setTimeoutTimer()
 
-  for await (const key of deps.receiveKeyPress()) {
+  for await (const key of keypress()) {
     deps.clearTimeoutTimer()
 
-    if (typeof key.name === 'undefined') {
+    if (typeof key.key === 'undefined') {
       throw new KeyParseError(key)
     }
 
-    if ((key.ctrl && key.name === 'c') || (key.ctrl && key.name === 'd') || (key.name === 'escape')) {
+    if ((key.ctrlKey && key.key === 'c') || (key.ctrlKey && key.key === 'd') || (key.key === 'escape')) {
       throw new AbortError()
     }
 
-    if (key.name === 'backspace' || (key.ctrl && key.name === 'w')) {
+    if (key.key === 'backspace' || (key.ctrlKey && key.key === 'w')) {
       if (navigation.length === 1) {
         throw new AbortError()
       }
@@ -42,7 +42,7 @@ export async function main(deps: Dependencies, bindings: Binding[]): Promise<Com
       continue
     }
 
-    if (key.ctrl && key.name === 'u') {
+    if (key.ctrlKey && key.key === 'u') {
       if (navigation.length === 1) {
         throw new AbortError()
       }
@@ -56,13 +56,13 @@ export async function main(deps: Dependencies, bindings: Binding[]): Promise<Com
       continue
     }
 
-    if (key.ctrl && PRINTABLE_ASCII.test(key.name)) {
+    if (key.ctrlKey && PRINTABLE_ASCII.test(key.key)) {
       deps.setTimeoutTimer()
 
       continue
     }
 
-    const inputKey = key.shift ? key.name.toUpperCase() : key.name
+    const inputKey = key.shiftKey ? key.key.toUpperCase() : key.key
     inputKeys.push(inputKey)
 
     const match = navigation.at(-1)!.find((b) => b.key === inputKey)

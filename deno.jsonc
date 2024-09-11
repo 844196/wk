@@ -13,7 +13,7 @@
   "imports": {
     "@cliffy/ansi": "jsr:@cliffy/ansi@1.0.0-rc.5",
     "@cliffy/command": "jsr:@cliffy/command@1.0.0-rc.5",
-    "@cliffy/keycode": "jsr:@cliffy/keycode@1.0.0-rc.5",
+    "@cliffy/keypress": "jsr:@cliffy/keypress@^1.0.0-rc.5",
     "@cliffy/table": "jsr:@cliffy/table@1.0.0-rc.5",
     "@dunosaurs/color": "https://deno.land/x/color@v0.3.0/mod.ts",
     "@eta-dev/eta": "jsr:@eta-dev/eta@^3.5.0",
