@@ -31,22 +31,12 @@ jobs:
         with:
           aqua_version: v2.28.0
 
-      - name: Dump ".mise.toml"
-        id: dump_mise_toml
-        run: |
-          {
-            echo 'mise_toml<<EOF'
-            cat .mise.toml
-            echo EOF
-          } >> "$GITHUB_OUTPUT"
-
       - name: Setup mise
         uses: jdx/mise-action@v2
         with:
           version: 2024.5.16
           install: true
           cache: true
-          mise_toml: ${{ steps.dump_mise_toml.outputs.mise_toml }}
 
       - name: Run check
         run: task check
