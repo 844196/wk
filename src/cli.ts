@@ -15,6 +15,7 @@ import { renderPrompt } from './ui.ts'
 import { renderTable } from './ui.ts'
 import { Eta } from '@eta-dev/eta'
 import widgetTemplate from './widget.generated.json' with { type: 'json' }
+import { keypress } from '@cliffy/keypress'
 
 const cli = new Command()
   .name('wk')
@@ -98,7 +99,7 @@ const run = new Command()
     }
 
     const deps: Dependencies = {
-      receiveKeyPress: () => tui.receiveKeyPress(),
+      receiveKeyPress: keypress,
       draw: (inputKeys, bindings) => tui.draw(renderPrompt(ctx, inputKeys), renderTable(ctx, bindings).toString()),
       setTimeoutTimer: () => {
         if (ctx.timeout > 0) {

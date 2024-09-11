@@ -7,6 +7,7 @@
       "jsr:@cliffy/flags@1.0.0-rc.5": "jsr:@cliffy/flags@1.0.0-rc.5",
       "jsr:@cliffy/internal@1.0.0-rc.5": "jsr:@cliffy/internal@1.0.0-rc.5",
       "jsr:@cliffy/keycode@1.0.0-rc.5": "jsr:@cliffy/keycode@1.0.0-rc.5",
+      "jsr:@cliffy/keypress@^1.0.0-rc.5": "jsr:@cliffy/keypress@1.0.0-rc.5",
       "jsr:@cliffy/table@1.0.0-rc.5": "jsr:@cliffy/table@1.0.0-rc.5",
       "jsr:@eta-dev/eta@^3.5.0": "jsr:@eta-dev/eta@3.5.0",
       "jsr:@lambdalisue/github-emoji@1.0.0": "jsr:@lambdalisue/github-emoji@1.0.0",
@@ -55,6 +56,13 @@
       },
       "@cliffy/keycode@1.0.0-rc.5": {
         "integrity": "2bcb3cb13873f0b758664394e003fc0cfa751af37a076ca9ec6e574df77aa3a8"
+      },
+      "@cliffy/keypress@1.0.0-rc.5": {
+        "integrity": "2404163ec12c92db6a765b6864f9055aff166e667fa945b42a4c53f81f564bdd",
+        "dependencies": [
+          "jsr:@cliffy/internal@1.0.0-rc.5",
+          "jsr:@cliffy/keycode@1.0.0-rc.5"
+        ]
       },
       "@cliffy/table@1.0.0-rc.5": {
         "integrity": "2b3e1b4764bbb56b0c39aeba95bc0bb551d9bd4475fbb6d1ce368c08b7ef9eb3",
@@ -203,7 +211,7 @@
     "dependencies": [
       "jsr:@cliffy/ansi@1.0.0-rc.5",
       "jsr:@cliffy/command@1.0.0-rc.5",
-      "jsr:@cliffy/keycode@1.0.0-rc.5",
+      "jsr:@cliffy/keypress@^1.0.0-rc.5",
       "jsr:@cliffy/table@1.0.0-rc.5",
       "jsr:@eta-dev/eta@^3.5.0",
       "jsr:@lambdalisue/github-emoji@1.0.0",

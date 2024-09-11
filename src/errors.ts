@@ -1,4 +1,4 @@
-import { KeyCode } from '@cliffy/keycode'
+import { KeyPressEvent } from '@cliffy/keypress'
 
 export class AbortError extends Error {}
 
@@ -16,14 +16,14 @@ export class UndefinedKeyError extends Error {
 }
 
 export class KeyParseError extends Error {
-  #key: KeyCode
+  #key: KeyPressEvent
 
-  constructor(key: KeyCode) {
+  constructor(key: KeyPressEvent) {
     super()
     this.#key = key
   }
 
-  getKey(): KeyCode {
-    return this.#key
+  getKey(): string | undefined {
+    return this.#key.key
   }
 }

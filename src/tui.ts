@@ -1,6 +1,5 @@
 import { ansi } from '@cliffy/ansi'
 import { tty as ttyFactory } from '@cliffy/ansi/tty'
-import { type KeyCode, parse as parseKeyCode } from '@cliffy/keycode'
 
 export class TUI {
   #reader: Deno.FsFile
@@ -65,24 +64,5 @@ export class TUI {
         .cursorShow
         .bytes(),
     )
-  }
-
-  async *receiveKeyPress(): AsyncGenerator<KeyCode, void> {
-    while (true) {
-      const data = new Uint8Array(8)
-
-      this.#reader.setRaw(true)
-      const numberOfBytesRead = await this.#reader.read(data)
-      this.#reader.setRaw(false)
-
-      if (numberOfBytesRead === null) {
-        return
-      }
-
-      const keys: Array<KeyCode> = parseKeyCode(data.subarray(0, numberOfBytesRead))
-      for (const key of keys) {
-        yield key
-      }
-    }
   }
 }
