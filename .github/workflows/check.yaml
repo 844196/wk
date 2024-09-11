@@ -51,5 +51,5 @@ jobs:
       - name: Run check
         run: task check
 
-      - name: Try compile
-        run: task compile
+      - name: Try build
+        run: task build

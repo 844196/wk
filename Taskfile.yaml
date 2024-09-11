@@ -15,7 +15,7 @@ tasks:
       - deno lint
       - deno check src/cli.ts
 
-  compile:
+  build:
     deps:
       - version_file
       - widget_file
