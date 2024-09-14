@@ -1,10 +1,10 @@
-import { keypress, KeyPressEvent } from '@cliffy/keypress'
+import { type KeyPressEvent } from '@cliffy/keypress'
 import { PRINTABLE_ASCII } from './const.ts'
 import { AbortError, KeyParseError, UndefinedKeyError } from './errors.ts'
 import { type Binding, type Command } from './types/Binding.ts'
 
 export type Dependencies = {
-  receiveKeyPress: () => AsyncIterator<KeyPressEvent, PromiseLike<KeyPressEvent>>
+  keypress: () => AsyncIterable<KeyPressEvent>
   draw: (inputKeys: string[], bindings: Binding[]) => unknown
   setTimeoutTimer: () => unknown
   clearTimeoutTimer: () => unknown
@@ -17,7 +17,7 @@ export async function main(deps: Dependencies, bindings: Binding[]): Promise<Com
   deps.draw(inputKeys, bindings)
   deps.setTimeoutTimer()
 
-  for await (const key of keypress()) {
+  for await (const key of deps.keypress()) {
     deps.clearTimeoutTimer()
 
     if (typeof key.key === 'undefined') {

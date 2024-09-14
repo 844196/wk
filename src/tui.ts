@@ -1,5 +1,6 @@
 import { ansi } from '@cliffy/ansi'
 import { tty as ttyFactory } from '@cliffy/ansi/tty'
+import { keypress, KeyPressEvent } from '@cliffy/keypress'
 
 export class TUI {
   #reader: Deno.FsFile
@@ -64,5 +65,14 @@ export class TUI {
         .cursorShow
         .bytes(),
     )
+  }
+
+  async *keypress(): AsyncIterable<KeyPressEvent> {
+    for await (const key of keypress()) {
+      if (key.sequence?.match(/\[\d+;\d+R/)) { // CSI 6 n response
+        continue
+      }
+      yield key
+    }
   }
 }
