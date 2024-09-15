@@ -1,6 +1,7 @@
 import { ansi } from '@cliffy/ansi'
 import { tty as ttyFactory } from '@cliffy/ansi/tty'
 import { keypress, KeyPressEvent } from '@cliffy/keypress'
+import { stripAnsiCode } from '@std/fmt/colors'
 
 export class TUI {
   #reader: Deno.FsFile
@@ -13,7 +14,13 @@ export class TUI {
   }
 
   init(): void {
-    this.#upOneLine = ttyFactory({ reader: this.#reader, writer: this.#writer }).getCursorPosition().x > 1
+    const pos = ttyFactory({ reader: this.#reader, writer: this.#writer }).getCursorPosition()
+
+    // getCursorPosition() ordinary returns 1-based position.
+    // However, if the process fails, it returns { x: 0, y: 0 }.
+    const cursorX = Math.max(pos.x, 1)
+
+    this.#upOneLine = cursorX > 1
 
     if (this.#upOneLine) {
       this.#writer.writeSync(ansi.text('\n').bytes())
@@ -53,15 +60,13 @@ export class TUI {
         .bytes(),
     )
 
-    const { x } = ttyFactory({ reader: this.#reader, writer: this.#writer }).getCursorPosition()
-
     this.#writer.writeSync(
       ansi
         .text('\n')
         .text('\x1b[0J')
         .text(tableLines)
         .cursorUp(tableLines.split('\n').length)
-        .cursorLeft.cursorMove(x - 1, 0)
+        .cursorLeft.cursorMove(stripAnsiCode(promptLine).length, 0)
         .cursorShow
         .bytes(),
     )
