@@ -43,7 +43,7 @@
 ---
 timeout: 60000
 symbols:
-  prompt: "❯ "
+  prompt: '❯ '
 colors:
   prompt: 8
   inputKeys:

@@ -27,11 +27,10 @@ tasks:
         - x86_64-apple-darwin
         - aarch64-apple-darwin
     cmds:
-      -
-        for:
+      - for:
           var: TARGETS
           as: TARGET
-        cmd: deno compile --frozen --allow-all --target {{.TARGET}} --output dist/wk-{{.TARGET}} src/cli.ts
+        cmd: deno compile --cached-only --lock --frozen --allow-all --target {{.TARGET}} --output dist/wk-{{.TARGET}} src/cli.ts
 
   version_file:
     vars:
