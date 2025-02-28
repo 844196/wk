@@ -1,4 +1,4 @@
-import { KeyPressEvent } from '@cliffy/keypress'
+import { type KeyPressEvent } from '@cliffy/keypress'
 
 export class AbortError extends Error {}
 

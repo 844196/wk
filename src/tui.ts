@@ -1,6 +1,6 @@
 import { ansi } from '@cliffy/ansi'
 import { tty as ttyFactory } from '@cliffy/ansi/tty'
-import { keypress, KeyPressEvent } from '@cliffy/keypress'
+import { keypress, type KeyPressEvent } from '@cliffy/keypress'
 import { stripAnsiCode } from '@std/fmt/colors'
 
 export class TUI {
