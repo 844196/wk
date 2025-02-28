@@ -15,7 +15,7 @@
 
    ```shell
    # Register a widget with the name "_wk_widget", and bind it to the ^G.
-   eval "$(wk widget zsh)"
+   eval "$(wk --init '^G')"
    ```
 
 3. Restart zsh.
@@ -24,13 +24,13 @@
 > If you want to change the trigger key, change it as follows:
 >
 > ```shell
-> eval "$(wk widget zsh --bindkey '^T')"
+> eval "$(wk --init '^T')"
 > ```
 >
 > If you want to register only the widget, change it as follows:
 >
 > ```shell
-> eval "$(wk widget zsh --no-bindkey)"
+> eval "$(wk --init '')"
 > ```
 
 ## :gear: Configuration

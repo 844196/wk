@@ -1,6 +1,6 @@
 _wk_widget() {
   local res=''
-  res=$(<%= it.wk_path %> run < $TTY 2>&1)
+  res=$(<%= it.wk_path %> < $TTY 2>&1)
   local wk_exit=$?
 
   zle redisplay
@@ -42,6 +42,6 @@ _wk_widget() {
 }
 
 zle -N _wk_widget
-<% if (typeof it.bindkey === 'string') { %>
+<% if (typeof it.bindkey === 'string' && it.bindkey !== '') { %>
 bindkey '<%= it.bindkey %>' _wk_widget
 <% } %>
