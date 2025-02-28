@@ -14,7 +14,6 @@ import version from './version.generated.json' with { type: 'json' }
 import { renderPrompt } from './ui.ts'
 import { renderTable } from './ui.ts'
 import { Eta } from '@eta-dev/eta'
-import widgetTemplate from './widget.generated.json' with { type: 'json' }
 
 const cli = new Command()
   .name('wk')
@@ -27,9 +26,9 @@ const widget = new Command()
   .option('--bindkey <key>', 'Bind the widget to the key.', { default: '^G' })
   .option('--no-bindkey', 'Do not bind the widget to the key.')
   .action(({ bindkey }) => {
-    const eta = new Eta()
+    const eta = new Eta({ views: import.meta.dirname })
 
-    const rendered = eta.renderString(widgetTemplate, {
+    const rendered = eta.render('./widget', {
       wk_path: Deno.execPath(),
       bindkey,
     })
