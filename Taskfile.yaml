@@ -9,7 +9,6 @@ tasks:
   check:
     deps:
       - version_file
-      - widget_file
     cmds:
       - deno fmt --check
       - deno lint
@@ -18,7 +17,6 @@ tasks:
   build:
     deps:
       - version_file
-      - widget_file
     vars:
       TARGETS:
         - x86_64-unknown-linux-gnu
@@ -30,16 +28,9 @@ tasks:
       - for:
           var: TARGETS
           as: TARGET
-        cmd: deno compile --cached-only --lock --frozen --allow-all --target {{.TARGET}} --output dist/wk-{{.TARGET}} src/cli.ts
+        cmd: deno compile --cached-only --lock --frozen --allow-all --target {{.TARGET}} --include src/widget.eta --output dist/wk-{{.TARGET}} src/cli.ts
 
   version_file:
     vars:
       VERSION: '{{.VERSION | default "development"}}'
     cmd: echo '"{{.VERSION}}"' > src/version.generated.json
-
-  widget_file:
-    sources:
-      - src/widget.eta
-    generates:
-      - src/widget.generated.json
-    cmd: jq --raw-input --slurp < src/widget.eta > src/widget.generated.json
