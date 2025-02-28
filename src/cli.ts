@@ -1,17 +1,15 @@
 import { Command } from '@cliffy/command'
+import { Eta } from '@eta-dev/eta'
 import { deepMerge } from '@std/collections'
 import { join as joinPath } from '@std/path'
-import { rcFile } from 'rc-config-loader'
 import { XDG_CONFIG_HOME } from './const.ts'
 import { AbortError, KeyParseError, UndefinedKeyError } from './errors.ts'
 import { Dependencies, main } from './main.ts'
 import { TUI } from './tui.ts'
 import { type Binding } from './types/Binding.ts'
 import { type Context, defaultContext } from './types/Context.ts'
-import { getKeySymbol } from './ui.ts'
-import { renderPrompt } from './ui.ts'
-import { renderTable } from './ui.ts'
-import { Eta } from '@eta-dev/eta'
+import { getKeySymbol, renderPrompt, renderTable } from './ui.ts'
+import { parse as parseYaml } from '@std/yaml'
 
 const cli = new Command()
   .name('wk')
@@ -34,26 +32,25 @@ const widget = new Command()
     console.log(rendered)
   })
 
+async function loadYaml<T>(path: string) {
+  const text = await Deno.readTextFile(path)
+  return parseYaml(text) as T
+}
+
 const run = new Command()
   .description('Run the workflow.')
   .action(async () => {
-    const ctx = (() => {
-      const found = rcFile<Context>('wk', { configFileName: joinPath(XDG_CONFIG_HOME, 'wk', 'config') })
+    const fetchContextWaiting = (async () => {
+      const found = await loadYaml<Context>(joinPath(XDG_CONFIG_HOME, 'wk', 'config.yaml')).catch(() => undefined)
       if (found === undefined) {
         return defaultContext
       }
-      return deepMerge<Context>(defaultContext, found.config)
+      return deepMerge<Context>(defaultContext, found)
     })()
 
-    const bindings = (() => {
-      const foundGlobal = rcFile<Binding[]>('wk', { configFileName: joinPath(XDG_CONFIG_HOME, 'wk', 'bindings') })
-      const globalBindings = foundGlobal?.config ?? []
-
-      const foundLocal = rcFile<Binding[]>('wk', { configFileName: 'wk.bindings' })
-      const localBindings = foundLocal?.config ?? []
-
-      return [...globalBindings, ...localBindings]
-    })()
+    const loadBindings = (path: string) => loadYaml<Binding[]>(path).catch(() => [])
+    const fetchGlobalBindingsWaiting = loadBindings(joinPath(XDG_CONFIG_HOME, 'wk', 'bindings.yaml'))
+    const fetchLocalBindingsWaiting = loadBindings(joinPath(Deno.cwd(), 'wk.bindings.yaml'))
 
     const [ttyReader, ttyWriter] = await Promise.all([
       Deno.open('/dev/tty', { read: true, write: false }),
@@ -61,27 +58,32 @@ const run = new Command()
     ])
     const tui = new TUI(ttyReader, ttyWriter)
 
-    let timeoutTimerId: number | undefined
-    const handleTimeout = () => {
-      tui.close()
-      Deno.exit(4)
-    }
-
-    const deps: Dependencies = {
-      keypress: tui.keypress,
-      draw: (inputKeys, bindings) => tui.draw(renderPrompt(ctx, inputKeys), renderTable(ctx, bindings).toString()),
-      setTimeoutTimer: () => {
-        if (ctx.timeout > 0) {
-          timeoutTimerId = setTimeout(handleTimeout, ctx.timeout)
-        }
-      },
-      clearTimeoutTimer: () => {
-        if (timeoutTimerId !== undefined) clearTimeout(timeoutTimerId)
-      },
-    }
-
     try {
       tui.init()
+
+      const ctx = await fetchContextWaiting
+
+      let timeoutTimerId: number | undefined
+      const handleTimeout = () => {
+        tui.close()
+        Deno.exit(4)
+      }
+
+      const deps: Dependencies = {
+        keypress: tui.keypress,
+        draw: (inputKeys, bindings) => tui.draw(renderPrompt(ctx, inputKeys), renderTable(ctx, bindings).toString()),
+        setTimeoutTimer: () => {
+          if (ctx.timeout > 0) {
+            timeoutTimerId = setTimeout(handleTimeout, ctx.timeout)
+          }
+        },
+        clearTimeoutTimer: () => {
+          if (timeoutTimerId !== undefined) clearTimeout(timeoutTimerId)
+        },
+      }
+
+      const [globalBindings, localBindings] = await Promise.all([fetchGlobalBindingsWaiting, fetchLocalBindingsWaiting])
+      const bindings = [...globalBindings, ...localBindings]
 
       const {
         key: _,
@@ -118,7 +120,7 @@ const run = new Command()
         Deno.exit(3)
       } else if (e instanceof UndefinedKeyError) {
         tui.close()
-        console.error(`"${e.getInputKeys().map((k) => getKeySymbol(ctx, k)).join(' ')}" is undefined`)
+        console.error(`"${e.getInputKeys().map((k) => getKeySymbol(defaultContext, k)).join(' ')}" is undefined`)
         Deno.exit(5)
       } else if (e instanceof KeyParseError) {
         tui.close()
