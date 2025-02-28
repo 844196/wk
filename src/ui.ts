@@ -1,6 +1,5 @@
-import { colors } from '@cliffy/ansi/colors'
+import { bold, dim, hidden, inverse, italic, rgb24, rgb8, strikethrough, underline } from '@std/fmt/colors'
 import { border as defaultBorder, Table } from '@cliffy/table'
-import { Color as ColorUtil } from '@dunosaurs/color'
 import { type Binding } from './types/Binding.ts'
 import { type Color, type Context } from './types/Context.ts'
 
@@ -11,32 +10,32 @@ function color(text: string, givenColor: Color) {
   const colorized = ansi256 === -1
     ? text
     : typeof ansi256 === 'string'
-    ? colors.rgb24(text, ColorUtil.string(ansi256).rgbNumber())
-    : colors.rgb8(text, ansi256)
+    ? rgb24(text, parseInt(ansi256.slice(1), 16))
+    : rgb8(text, ansi256)
 
   let attributed = colorized
   for (const attr of attrs) {
     switch (attr) {
       case 'bold':
-        attributed = colors.bold(attributed)
+        attributed = bold(attributed)
         break
       case 'dim':
-        attributed = colors.dim(attributed)
+        attributed = dim(attributed)
         break
       case 'italic':
-        attributed = colors.italic(attributed)
+        attributed = italic(attributed)
         break
       case 'underline':
-        attributed = colors.underline(attributed)
+        attributed = underline(attributed)
         break
       case 'inverse':
-        attributed = colors.inverse(attributed)
+        attributed = inverse(attributed)
         break
       case 'hidden':
-        attributed = colors.hidden(attributed)
+        attributed = hidden(attributed)
         break
       case 'strikethrough':
-        attributed = colors.strikethrough(attributed)
+        attributed = strikethrough(attributed)
         break
     }
   }
