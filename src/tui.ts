@@ -1,7 +1,7 @@
 import { ansi } from '@cliffy/ansi'
-import { tty as ttyFactory } from '@cliffy/ansi/tty'
 import { keypress, type KeyPressEvent } from '@cliffy/keypress'
 import { stripAnsiCode } from '@std/fmt/colors'
+import { getCursorPosition } from '@cliffy/ansi/cursor-position'
 
 export class TUI {
   #reader: Deno.FsFile
@@ -14,7 +14,7 @@ export class TUI {
   }
 
   init(): void {
-    const pos = ttyFactory({ reader: this.#reader, writer: this.#writer }).getCursorPosition()
+    const pos = getCursorPosition({ reader: this.#reader, writer: this.#writer })
 
     // getCursorPosition() ordinary returns 1-based position.
     // However, if the process fails, it returns { x: 0, y: 0 }.
