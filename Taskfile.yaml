@@ -7,17 +7,14 @@ set:
 
 tasks:
   check:
-    deps:
-      - version_file
     cmds:
       - deno fmt --check
       - deno lint
       - deno check src/cli.ts
 
   build:
-    deps:
-      - version_file
     vars:
+      VERSION: '{{.VERSION | default "unknown"}}'
       TARGETS:
         - x86_64-unknown-linux-gnu
         - aarch64-unknown-linux-gnu
@@ -25,12 +22,8 @@ tasks:
         - x86_64-apple-darwin
         - aarch64-apple-darwin
     cmds:
+      - echo 'WK_VERSION="{{.VERSION}}"' > .env
       - for:
           var: TARGETS
           as: TARGET
-        cmd: deno compile --cached-only --lock --frozen --allow-all --target {{.TARGET}} --include src/widget.eta --output dist/wk-{{.TARGET}} src/cli.ts
-
-  version_file:
-    vars:
-      VERSION: '{{.VERSION | default "development"}}'
-    cmd: echo '"{{.VERSION}}"' > src/version.generated.json
+        cmd: deno compile --cached-only --lock --frozen --env-file --allow-all --target {{.TARGET}} --include src/widget.eta --output dist/wk-{{.TARGET}} src/cli.ts
