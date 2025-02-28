@@ -2,13 +2,12 @@ import { Command } from '@cliffy/command'
 import { deepMerge } from '@std/collections'
 import { join as joinPath } from '@std/path'
 import { rcFile } from 'rc-config-loader'
-import { z } from 'zod'
 import { XDG_CONFIG_HOME } from './const.ts'
 import { AbortError, KeyParseError, UndefinedKeyError } from './errors.ts'
 import { Dependencies, main } from './main.ts'
 import { TUI } from './tui.ts'
-import { type Binding, BindingSchema } from './types/Binding.ts'
-import { type Context, ContextSchema, defaultContext } from './types/Context.ts'
+import { type Binding } from './types/Binding.ts'
+import { type Context, defaultContext } from './types/Context.ts'
 import { getKeySymbol } from './ui.ts'
 import { renderPrompt } from './ui.ts'
 import { renderTable } from './ui.ts'
@@ -37,48 +36,21 @@ const widget = new Command()
 
 const run = new Command()
   .description('Run the workflow.')
-  .option('--no-validation', 'Skip validation of the configuration files.')
-  .action(async ({ validation: shouldValidation = true }) => {
+  .action(async () => {
     const ctx = (() => {
-      const found = rcFile('wk', { configFileName: joinPath(XDG_CONFIG_HOME, 'wk', 'config') })
+      const found = rcFile<Context>('wk', { configFileName: joinPath(XDG_CONFIG_HOME, 'wk', 'config') })
       if (found === undefined) {
         return defaultContext
       }
-
-      let config
-      if (shouldValidation) {
-        config = ContextSchema.deepPartial().parse(found.config) as Partial<Context>
-      } else {
-        config = found.config as unknown as Context
-      }
-
-      return deepMerge<Context>(defaultContext, config)
+      return deepMerge<Context>(defaultContext, found.config)
     })()
 
     const bindings = (() => {
-      const foundGlobal = rcFile('wk', { configFileName: joinPath(XDG_CONFIG_HOME, 'wk', 'bindings') })
-      let globalBindings: Binding[]
-      if (foundGlobal === undefined) {
-        globalBindings = []
-      } else {
-        if (shouldValidation) {
-          globalBindings = z.array(BindingSchema).parse(foundGlobal.config)
-        } else {
-          globalBindings = foundGlobal.config as unknown as Binding[]
-        }
-      }
+      const foundGlobal = rcFile<Binding[]>('wk', { configFileName: joinPath(XDG_CONFIG_HOME, 'wk', 'bindings') })
+      const globalBindings = foundGlobal?.config ?? []
 
-      const foundLocal = rcFile('wk', { configFileName: 'wk.bindings' })
-      let localBindings: Binding[]
-      if (foundLocal === undefined) {
-        localBindings = []
-      } else {
-        if (shouldValidation) {
-          localBindings = z.array(BindingSchema).parse(foundLocal.config)
-        } else {
-          localBindings = foundLocal.config as unknown as Binding[]
-        }
-      }
+      const foundLocal = rcFile<Binding[]>('wk', { configFileName: 'wk.bindings' })
+      const localBindings = foundLocal?.config ?? []
 
       return [...globalBindings, ...localBindings]
     })()
