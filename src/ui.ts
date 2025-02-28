@@ -1,7 +1,6 @@
 import { colors } from '@cliffy/ansi/colors'
 import { border as defaultBorder, Table } from '@cliffy/table'
 import { Color as ColorUtil } from '@dunosaurs/color'
-import { emojify } from '@lambdalisue/github-emoji'
 import { type Binding } from './types/Binding.ts'
 import { type Color, type Context } from './types/Context.ts'
 
@@ -72,7 +71,7 @@ const plainBorder = Object.entries(defaultBorder)
     {},
   )
 function renderTableRow(ctx: Context, binding: Binding) {
-  const icon = typeof binding.icon === 'string' ? color(emojify(binding.icon), ctx.colors.bindingIcon) : ''
+  const icon = typeof binding.icon === 'string' ? color(binding.icon, ctx.colors.bindingIcon) : ''
   const group = binding.type === 'bindings' ? color(ctx.symbols.group, ctx.colors.group) : ''
 
   let desc = ''

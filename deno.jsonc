@@ -16,7 +16,6 @@
     "@cliffy/table": "jsr:@cliffy/table@1.0.0-rc.7",
     "@dunosaurs/color": "https://deno.land/x/color@v0.3.0/mod.ts",
     "@eta-dev/eta": "jsr:@eta-dev/eta@3.5.0",
-    "@lambdalisue/github-emoji": "jsr:@lambdalisue/github-emoji@1.0.0",
     "@std/collections": "jsr:@std/collections@1.0.9",
     "@std/fmt": "jsr:@std/fmt@1.0.3",
     "@std/path": "jsr:@std/path@1.0.8",
