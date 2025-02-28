@@ -72,9 +72,6 @@
       "integrity": "sha512-GCPAHLvrIH13+c0SuacwvRYj2SxJXQ4kaVTT5xgL3kPrz56XxkF21IGhjSE1+W0aw7gpBWRGXLCPnPby6lSpmQ=="
     }
   },
-  "remote": {
-    "https://deno.land/x/color@v0.3.0/mod.ts": "7db5473061c484f0e830ee883ab0764bb55999acfd6a182919540ac9efa830a2"
-  },
   "workspace": {
     "dependencies": [
       "jsr:@cliffy/ansi@1.0.0-rc.7",
