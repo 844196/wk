@@ -1,44 +1,31 @@
-import { z } from 'zod'
+type ANSIColor = number | string
 
-const ANSIColorSchema = z.union([
-  z.number().int().min(-1).max(255),
-  z.string().regex(/^#[0-9a-fA-F]{6}$/),
-])
+type ColorAttribute = 'bold' | 'dim' | 'italic' | 'underline' | 'inverse' | 'hidden' | 'strikethrough'
 
-const ColorSchema = z.union([
-  ANSIColorSchema,
-  z.object({
-    color: ANSIColorSchema,
-    attrs: z.array(z.enum(['bold', 'dim', 'italic', 'underline', 'inverse', 'hidden', 'strikethrough'])).min(1),
-  }),
-])
+export type Color = ANSIColor | { color: ANSIColor; attrs: [ColorAttribute, ...ColorAttribute[]] }
 
-export type Color = z.infer<typeof ColorSchema>
-
-export const ContextSchema = z.object({
-  outputDelimiter: z.string(),
-  timeout: z.number().int().min(0),
-  symbols: z.object({
-    prompt: z.string(),
-    breadcrumb: z.string(),
-    separator: z.string(),
-    group: z.string(),
-    keys: z.record(z.string()),
-  }),
-  colors: z.object({
-    prompt: ColorSchema,
-    breadcrumb: ColorSchema,
-    separator: ColorSchema,
-    group: ColorSchema,
-    inputKeys: ColorSchema,
-    lastInputKey: ColorSchema,
-    bindingKey: ColorSchema,
-    bindingIcon: ColorSchema,
-    bindingDescription: ColorSchema,
-  }),
-})
-
-export type Context = z.infer<typeof ContextSchema>
+export type Context = {
+  outputDelimiter: string
+  timeout: number
+  symbols: {
+    prompt: string
+    breadcrumb: string
+    separator: string
+    group: string
+    keys: Record<string, string>
+  }
+  colors: {
+    prompt: Color
+    breadcrumb: Color
+    separator: Color
+    group: Color
+    inputKeys: Color
+    lastInputKey: Color
+    bindingKey: Color
+    bindingIcon: Color
+    bindingDescription: Color
+  }
+}
 
 export const defaultContext: Context = {
   outputDelimiter: '\t',

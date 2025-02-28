@@ -1,9 +1,6 @@
 _wk_widget() {
-  local opts
-  zstyle -a ':wk:*' options opts || opts=()
-
   local res=''
-  res=$(<%= it.wk_path %> run ${=opts} < $TTY 2>&1)
+  res=$(<%= it.wk_path %> run < $TTY 2>&1)
   local wk_exit=$?
 
   zle redisplay
