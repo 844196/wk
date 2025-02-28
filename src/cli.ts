@@ -10,14 +10,13 @@ import { TUI } from './tui.ts'
 import { type Binding, BindingSchema } from './types/Binding.ts'
 import { type Context, ContextSchema, defaultContext } from './types/Context.ts'
 import { getKeySymbol } from './ui.ts'
-import version from './version.generated.json' with { type: 'json' }
 import { renderPrompt } from './ui.ts'
 import { renderTable } from './ui.ts'
 import { Eta } from '@eta-dev/eta'
 
 const cli = new Command()
   .name('wk')
-  .version(version)
+  .version(Deno.env.get('WK_VERSION') ?? 'unknown')
   .versionOption('-v, --version', 'Show the version number for this program.', { global: true })
 
 const widget = new Command()
