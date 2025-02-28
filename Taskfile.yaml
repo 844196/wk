@@ -26,4 +26,4 @@ tasks:
       - for:
           var: TARGETS
           as: TARGET
-        cmd: deno compile --cached-only --lock --frozen --env-file --allow-all --target {{.TARGET}} --include src/widget.eta --output dist/wk-{{.TARGET}} src/cli.ts
+        cmd: deno compile --no-check --cached-only --lock --frozen --env-file --allow-all --target {{.TARGET}} --include src/widget.eta --output dist/wk-{{.TARGET}} src/cli.ts
