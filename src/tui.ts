@@ -13,14 +13,18 @@ export class TUI {
     this.#writer = writer
   }
 
-  init(): void {
-    const pos = getCursorPosition({ reader: this.#reader, writer: this.#writer })
+  init(upOneLine: boolean | 'auto'): void {
+    if (upOneLine === 'auto') {
+      const pos = getCursorPosition({ reader: this.#reader, writer: this.#writer })
 
-    // getCursorPosition() ordinary returns 1-based position.
-    // However, if the process fails, it returns { x: 0, y: 0 }.
-    const cursorX = Math.max(pos.x, 1)
+      // getCursorPosition() ordinary returns 1-based position.
+      // However, if the process fails, it returns { x: 0, y: 0 }.
+      const cursorX = Math.max(pos.x, 1)
 
-    this.#upOneLine = cursorX > 1
+      this.#upOneLine = cursorX > 1
+    } else {
+      this.#upOneLine = upOneLine
+    }
 
     if (this.#upOneLine) {
       this.#writer.writeSync(ansi.text('\n').bytes())
