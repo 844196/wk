@@ -20,6 +20,9 @@ const { values: opts } = parseArgs({
     init: {
       type: 'string',
     },
+    'up-one-line': {
+      type: 'string',
+    },
   },
 })
 
@@ -65,7 +68,7 @@ const [ttyReader, ttyWriter] = await Promise.all([
 const tui = new TUI(ttyReader, ttyWriter)
 
 try {
-  tui.init()
+  tui.init(opts['up-one-line'] === 'true' ? true : opts['up-one-line'] === 'false' ? false : 'auto')
 
   const ctx = await fetchContextWaiting
 
