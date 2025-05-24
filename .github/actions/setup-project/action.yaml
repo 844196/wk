@@ -4,15 +4,10 @@ description: Setup project
 runs:
   using: composite
   steps:
-    - name: Setup aqua
-      uses: aquaproj/aqua-installer@v3.0.1
-      with:
-        aqua_version: v2.28.0
-
     - name: Setup mise
       uses: jdx/mise-action@v2
       with:
-        version: 2024.12.3
+        version: 2025.5.11
         install: true
         cache: true
 
