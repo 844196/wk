@@ -45,6 +45,8 @@ _wk_widget() {
 }
 
 zle -N _wk_widget
-<% if (typeof it.bindkey === 'string' && it.bindkey !== '') { %>
-bindkey '<%= it.bindkey %>' _wk_widget
+<% if (typeof it.bindkey === 'string' && it.bindkey === "'") { %>
+bindkey "'" _wk_widget
+<% } else if (typeof it.bindkey === 'string' && it.bindkey !== '') { %>
+bindkey '<%~ it.bindkey %>' _wk_widget
 <% } %>
