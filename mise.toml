@@ -27,5 +27,5 @@ depends = [
 
 [tasks.'build:internal']
 depends = 'generate:version'
-run = 'deno compile --no-check --cached-only --lock --frozen --env-file --allow-all --include src/widget.eta --target {{arg(name="target")}} --output dist/wk-{{arg(name="target")}} src/cli.ts'
+run = 'deno compile --env-file --allow-all --include src/widget.eta --target {{arg(name="target")}} --output dist/wk-{{arg(name="target")}} src/cli.ts'
 hide = true
