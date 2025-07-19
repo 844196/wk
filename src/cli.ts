@@ -10,6 +10,8 @@ import { type Context, defaultContext } from './types/Context.ts'
 import { getKeySymbol, renderPrompt, renderTable } from './ui.ts'
 import { parse as parseYaml } from '@std/yaml'
 import { parseArgs } from 'node:util'
+import VERSION from '../VERSION' with { type: 'text' }
+import WIDGET_TEMPLATE from './widget.eta' with { type: 'text' }
 
 const { values: opts } = parseArgs({
   options: {
@@ -27,14 +29,14 @@ const { values: opts } = parseArgs({
 })
 
 if (opts.version) {
-  console.log(Deno.env.get('WK_VERSION') ?? 'unknown')
+  console.log(VERSION.trim())
   Deno.exit(0)
 }
 
 if (opts.init !== undefined) {
-  const eta = new Eta({ views: import.meta.dirname })
+  const eta = new Eta()
 
-  const rendered = eta.render('./widget', {
+  const rendered = eta.renderString(WIDGET_TEMPLATE, {
     wk_path: Deno.execPath(),
     bindkey: opts.init,
   })

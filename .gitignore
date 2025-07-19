@@ -1,3 +1,2 @@
-.task/
-dist/
-.env
+/dist
+/VERSION
