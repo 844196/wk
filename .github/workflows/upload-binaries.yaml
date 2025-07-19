@@ -24,7 +24,7 @@ jobs:
         uses: ./.github/actions/setup-project
 
       - name: Run build
-        run: VERSION=${{ github.event.release.tag_name }} task build
+        run: VERSION=${{ github.event.release.tag_name }} mise run build
 
       - name: Upload binaries
         run: gh release upload ${{ github.event.release.tag_name }} dist/*
