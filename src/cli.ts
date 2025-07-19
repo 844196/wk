@@ -1,16 +1,15 @@
 import { Eta } from '@eta-dev/eta'
-import { deepMerge } from '@std/collections'
 import { join as joinPath } from '@std/path'
+import { parse as parseYaml } from '@std/yaml'
+import { parseArgs } from 'node:util'
+import VERSION from '../VERSION' with { type: 'text' }
 import { XDG_CONFIG_HOME } from './const.ts'
 import { AbortError, KeyParseError, UndefinedKeyError } from './errors.ts'
 import { type Dependencies, main } from './main.ts'
 import { TUI } from './tui.ts'
 import { type Binding } from './types/Binding.ts'
-import { type Context, defaultContext } from './types/Context.ts'
+import { defaultContext, mergeContext, PartialContext } from './types/Context.ts'
 import { getKeySymbol, renderPrompt, renderTable } from './ui.ts'
-import { parse as parseYaml } from '@std/yaml'
-import { parseArgs } from 'node:util'
-import VERSION from '../VERSION' with { type: 'text' }
 import WIDGET_TEMPLATE from './widget.eta' with { type: 'text' }
 
 const { values: opts } = parseArgs({
@@ -52,16 +51,17 @@ async function loadYaml<T>(path: string) {
 }
 
 const fetchContextWaiting = (async () => {
-  const found = await loadYaml<Context>(joinPath(XDG_CONFIG_HOME, 'wk', 'config.yaml')).catch(() => undefined)
+  const found = await loadYaml<PartialContext>(joinPath(XDG_CONFIG_HOME, 'wk', 'config.yaml')).catch(() => undefined)
   if (found === undefined) {
     return defaultContext
   }
-  return deepMerge<Context>(defaultContext, found)
+  return mergeContext(found)
 })()
 
-const loadBindings = (path: string) => loadYaml<Binding[]>(path).catch(() => [])
-const fetchGlobalBindingsWaiting = loadBindings(joinPath(XDG_CONFIG_HOME, 'wk', 'bindings.yaml'))
-const fetchLocalBindingsWaiting = loadBindings(joinPath(Deno.cwd(), 'wk.bindings.yaml'))
+const fetchBindingsWaiting = Promise.all([
+  loadYaml<Binding[]>(joinPath(XDG_CONFIG_HOME, 'wk', 'bindings.yaml')).catch(() => []).catch(() => []),
+  loadYaml<Binding[]>(joinPath(Deno.cwd(), 'wk.bindings.yaml')).catch(() => []).catch(() => []),
+]).then(([globalBindings, localBindings]) => [...globalBindings, ...localBindings])
 
 const tty = await Deno.open('/dev/tty', { read: true, write: true })
 const tui = new TUI(tty, tty)
@@ -69,7 +69,7 @@ const tui = new TUI(tty, tty)
 try {
   tui.init(opts['up-one-line'] === 'true' ? true : opts['up-one-line'] === 'false' ? false : 'auto')
 
-  const ctx = await fetchContextWaiting
+  const [ctx, bindings] = await Promise.all([fetchContextWaiting, fetchBindingsWaiting])
 
   let timeoutTimerId: number | undefined
   const handleTimeout = () => {
@@ -89,9 +89,6 @@ try {
       if (timeoutTimerId !== undefined) clearTimeout(timeoutTimerId)
     },
   }
-
-  const [globalBindings, localBindings] = await Promise.all([fetchGlobalBindingsWaiting, fetchLocalBindingsWaiting])
-  const bindings = [...globalBindings, ...localBindings]
 
   const {
     key: _,

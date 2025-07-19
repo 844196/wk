@@ -27,6 +27,29 @@ export type Context = {
   }
 }
 
+export type PartialContext = {
+  outputDelimiter?: string
+  timeout?: number
+  symbols?: {
+    prompt?: string
+    breadcrumb?: string
+    separator?: string
+    group?: string
+    keys?: Record<string, string>
+  }
+  colors?: {
+    prompt?: Color
+    breadcrumb?: Color
+    separator?: Color
+    group?: Color
+    inputKeys?: Color
+    lastInputKey?: Color
+    bindingKey?: Color
+    bindingIcon?: Color
+    bindingDescription?: Color
+  }
+}
+
 export const defaultContext: Context = {
   outputDelimiter: '\t',
   timeout: 0,
@@ -80,4 +103,23 @@ export const defaultContext: Context = {
     bindingIcon: 8,
     bindingDescription: 8,
   },
+}
+
+export function mergeContext(userDefinedContext: PartialContext): Context {
+  return {
+    ...defaultContext,
+    ...userDefinedContext,
+    symbols: {
+      ...defaultContext.symbols,
+      ...userDefinedContext.symbols,
+      keys: {
+        ...defaultContext.symbols.keys,
+        ...userDefinedContext.symbols?.keys,
+      },
+    },
+    colors: {
+      ...defaultContext.colors,
+      ...userDefinedContext.colors,
+    },
+  }
 }
