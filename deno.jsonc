@@ -23,5 +23,6 @@
     "@std/path": "jsr:@std/path@1.0.8",
     "@std/yaml": "jsr:@std/yaml@1.0.5",
     "xdg-basedir": "npm:xdg-basedir@5.1.0"
-  }
+  },
+  "unstable": ["raw-imports"]
 }

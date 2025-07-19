@@ -11,10 +11,11 @@ run = 'deno fmt --check'
 run = 'deno lint'
 
 [tasks.'check:type']
+depends = 'generate:version'
 run = 'deno check src/cli.ts'
 
 [tasks.'generate:version']
-run = 'echo "WK_VERSION=${VERSION:-unknown}" > .env'
+run = 'echo "${VERSION:-unknown}" > VERSION'
 
 [tasks.build]
 depends = [
@@ -27,5 +28,5 @@ depends = [
 
 [tasks.'build:internal']
 depends = 'generate:version'
-run = 'deno compile --env-file --allow-all --include src/widget.eta --target {{arg(name="target")}} --output dist/wk-{{arg(name="target")}} src/cli.ts'
+run = 'deno compile --allow-all --target {{arg(name="target")}} --output dist/wk-{{arg(name="target")}} src/cli.ts'
 hide = true
