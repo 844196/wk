@@ -27,7 +27,7 @@ jobs:
         uses: ./.github/actions/setup-project
 
       - name: Run check
-        run: task check
+        run: mise run check
 
   build:
     name: Build
@@ -40,4 +40,4 @@ jobs:
         uses: ./.github/actions/setup-project
 
       - name: Run build
-        run: task build
+        run: mise run build

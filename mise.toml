@@ -1,3 +1,31 @@
 [tools]
 deno = '2.4.2'
-'aqua:go-task/task' = 'v3.42.1'
+
+[tasks.check]
+depends = ['check:format', 'check:lint', 'check:type']
+
+[tasks.'check:format']
+run = 'deno fmt --check'
+
+[tasks.'check:lint']
+run = 'deno lint'
+
+[tasks.'check:type']
+run = 'deno check src/cli.ts'
+
+[tasks.'generate:version']
+run = 'echo "WK_VERSION=${VERSION:-unknown}" > .env'
+
+[tasks.build]
+depends = [
+  'build:internal x86_64-unknown-linux-gnu',
+  'build:internal aarch64-unknown-linux-gnu',
+  'build:internal x86_64-apple-darwin',
+  'build:internal aarch64-apple-darwin',
+  'build:internal x86_64-pc-windows-msvc',
+]
+
+[tasks.'build:internal']
+depends = 'generate:version'
+run = 'deno compile --no-check --cached-only --lock --frozen --env-file --allow-all --include src/widget.eta --target {{arg(name="target")}} --output dist/wk-{{arg(name="target")}} src/cli.ts'
+hide = true
