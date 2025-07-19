@@ -63,11 +63,8 @@ const loadBindings = (path: string) => loadYaml<Binding[]>(path).catch(() => [])
 const fetchGlobalBindingsWaiting = loadBindings(joinPath(XDG_CONFIG_HOME, 'wk', 'bindings.yaml'))
 const fetchLocalBindingsWaiting = loadBindings(joinPath(Deno.cwd(), 'wk.bindings.yaml'))
 
-const [ttyReader, ttyWriter] = await Promise.all([
-  Deno.open('/dev/tty', { read: true, write: false }),
-  Deno.open('/dev/tty', { read: false, write: true }),
-])
-const tui = new TUI(ttyReader, ttyWriter)
+const tty = await Deno.open('/dev/tty', { read: true, write: true })
+const tui = new TUI(tty, tty)
 
 try {
   tui.init(opts['up-one-line'] === 'true' ? true : opts['up-one-line'] === 'false' ? false : 'auto')
