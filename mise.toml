@@ -27,6 +27,10 @@ depends = [
 ]
 
 [tasks.'build:internal']
-depends = 'generate:version'
-run = 'deno compile --allow-all --target {{arg(name="target")}} --output dist/wk-{{arg(name="target")}} src/cli.ts'
+depends = 'bundle'
+run = 'deno compile --allow-all --target {{arg(name="target")}} --output dist/wk-{{arg(name="target")}} dist/wk.js'
 hide = true
+
+[tasks.bundle]
+depends = 'generate:version'
+run = 'deno bundle --minify --output dist/wk.js src/cli.ts'
