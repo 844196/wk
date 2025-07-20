@@ -14,11 +14,22 @@ async function loadYaml<T>(path: string) {
   return parseYaml(text) as T
 }
 
+function unescapeAnsi(given: string): string {
+  return given.replace(/\\x([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+}
+
 export const runCommand = new Command()
   .description('Run.')
   .type('boolOrAuto', new EnumType(['true', 'false', 'auto']))
   .option('--up-one-line [VALUE:boolOrAuto]', 'Whether to move the input up one line.', { default: 'auto' })
-  .action(async ({ upOneLine }) => {
+  .option('--inputs <KEYS:string>', '(Experimental) Simulate input keys.')
+  .example('wk run', 'Run.')
+  .example(
+    "wk run --inputs 'g p f'",
+    `Run with simulated input keys. (Space separated)
+For example, this simulates pressing "g", "p", and "f".`,
+  )
+  .action(async ({ upOneLine, inputs }) => {
     const fetchContextWaiting = (async () => {
       const found = await loadYaml<PartialContext>(joinPath(XDG_CONFIG_HOME, 'wk', 'config.yaml')).catch(() =>
         undefined
@@ -35,7 +46,7 @@ export const runCommand = new Command()
     ]).then(([globalBindings, localBindings]) => [...globalBindings, ...localBindings])
 
     const tty = await Deno.open('/dev/tty', { read: true, write: true })
-    const tui = new TUI(tty, tty)
+    const tui = new TUI(tty, inputs === undefined ? [] : inputs.split(' ').map(unescapeAnsi))
 
     try {
       tui.init(upOneLine === true ? true : upOneLine === 'true' ? true : upOneLine === 'false' ? false : 'auto')
@@ -49,7 +60,7 @@ export const runCommand = new Command()
       }
 
       const deps: Dependencies = {
-        keypress: tui.keypress,
+        keypress: tui.keypress.bind(tui),
         draw: (inputKeys, bindings) => tui.draw(renderPrompt(ctx, inputKeys), renderTable(ctx, bindings).toString()),
         setTimeoutTimer: () => {
           if (ctx.timeout > 0) {

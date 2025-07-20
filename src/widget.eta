@@ -3,7 +3,7 @@ _wk_widget() {
   zstyle -a ':wk:*' options opts || opts=()
 
   local res=''
-  res=$(<%= it.wk_path %> run ${=opts} < $TTY 2>&1)
+  res=$(<%= it.wk_path %> run ${=opts} "$@" < $TTY 2>&1)
   local wk_exit=$?
 
   zle redisplay
@@ -48,7 +48,7 @@ zle -N _wk_widget
 <% if (!it.bindkeyGlobal) { %>
 _wk_or_self_insert() {
   if [[ -z "$BUFFER" ]]; then
-    _wk_widget
+    zle _wk_widget
   else
     zle self-insert
   fi
