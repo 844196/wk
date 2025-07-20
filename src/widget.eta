@@ -48,7 +48,7 @@ zle -N _wk_widget
 <% if (!it.bindkeyGlobal) { %>
 _wk_or_self_insert() {
   if [[ -z "$BUFFER" ]]; then
-    _wk_widget
+    zle _wk_widget
   else
     zle self-insert
   fi
