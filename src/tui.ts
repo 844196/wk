@@ -4,18 +4,16 @@ import { stripAnsiCode } from '@std/fmt/colors'
 import { getCursorPosition } from '@cliffy/ansi/cursor-position'
 
 export class TUI {
-  #reader: Deno.FsFile
-  #writer: Deno.FsFile
+  #tty: Deno.FsFile
   #upOneLine: boolean = false
 
-  constructor(reader: Deno.FsFile, writer: Deno.FsFile) {
-    this.#reader = reader
-    this.#writer = writer
+  constructor(tty: Deno.FsFile) {
+    this.#tty = tty
   }
 
   init(upOneLine: boolean | 'auto'): void {
     if (upOneLine === 'auto') {
-      const pos = getCursorPosition({ reader: this.#reader, writer: this.#writer })
+      const pos = getCursorPosition({ reader: this.#tty, writer: this.#tty })
 
       // getCursorPosition() ordinary returns 1-based position.
       // However, if the process fails, it returns { x: 0, y: 0 }.
@@ -27,16 +25,16 @@ export class TUI {
     }
 
     if (this.#upOneLine) {
-      this.#writer.writeSync(ansi.text('\n').bytes())
+      this.#tty.writeSync(ansi.text('\n').bytes())
     }
   }
 
   showCursor(): void {
-    this.#writer.writeSync(ansi.cursorShow.bytes())
+    this.#tty.writeSync(ansi.cursorShow.bytes())
   }
 
   clear(): void {
-    this.#writer.writeSync(
+    this.#tty.writeSync(
       ansi
         .cursorHide
         .cursorLeft.eraseLine.text('\x1b[0J')
@@ -49,14 +47,14 @@ export class TUI {
     this.clear()
 
     if (this.#upOneLine) {
-      this.#writer.writeSync(ansi.cursorUp.bytes())
+      this.#tty.writeSync(ansi.cursorUp.bytes())
     }
 
     this.showCursor()
   }
 
   draw(promptLine: string, tableLines: string): void {
-    this.#writer.writeSync(
+    this.#tty.writeSync(
       ansi
         .cursorHide
         .eraseLine.text('\x1b[0J')
@@ -64,7 +62,7 @@ export class TUI {
         .bytes(),
     )
 
-    this.#writer.writeSync(
+    this.#tty.writeSync(
       ansi
         .text('\n')
         .text('\x1b[0J')

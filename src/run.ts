@@ -35,7 +35,7 @@ export const runCommand = new Command()
     ]).then(([globalBindings, localBindings]) => [...globalBindings, ...localBindings])
 
     const tty = await Deno.open('/dev/tty', { read: true, write: true })
-    const tui = new TUI(tty, tty)
+    const tui = new TUI(tty)
 
     try {
       tui.init(upOneLine === true ? true : upOneLine === 'true' ? true : upOneLine === 'false' ? false : 'auto')
