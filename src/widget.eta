@@ -43,10 +43,21 @@ _wk_widget() {
     zle $accept_widget
   fi
 }
-
 zle -N _wk_widget
+
+<% if (!it.bindkeyGlobal) { %>
+_wk_or_self_insert() {
+  if [[ -z "$BUFFER" ]]; then
+    _wk_widget
+  else
+    zle self-insert
+  fi
+}
+zle -N _wk_or_self_insert
+<% } %>
+
 <% if (typeof it.bindkey === 'string' && it.bindkey === "'") { %>
-bindkey "'" _wk_widget
+bindkey "'" <%= it.bindkeyGlobal ? '_wk_widget' : '_wk_or_self_insert' %>
 <% } else if (typeof it.bindkey === 'string' && it.bindkey !== '') { %>
-bindkey '<%~ it.bindkey %>' _wk_widget
+bindkey '<%~ it.bindkey %>' <%= it.bindkeyGlobal ? '_wk_widget' : '_wk_or_self_insert' %>
 <% } %>
