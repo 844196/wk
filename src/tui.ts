@@ -1,14 +1,17 @@
 import { ansi } from '@cliffy/ansi'
-import { keypress, type KeyPressEvent } from '@cliffy/keypress'
+import { keypress, KeyPressEvent } from '@cliffy/keypress'
 import { stripAnsiCode } from '@std/fmt/colors'
 import { getCursorPosition } from '@cliffy/ansi/cursor-position'
+import { parse as parseKeycode } from '@cliffy/keycode'
 
 export class TUI {
   #tty: Deno.FsFile
+  #inputs: string[]
   #upOneLine: boolean = false
 
-  constructor(tty: Deno.FsFile) {
+  constructor(tty: Deno.FsFile, inputs: string[]) {
     this.#tty = tty
+    this.#inputs = inputs
   }
 
   init(upOneLine: boolean | 'auto'): void {
@@ -75,6 +78,12 @@ export class TUI {
   }
 
   async *keypress(): AsyncIterable<KeyPressEvent> {
+    for (const input of this.#inputs) {
+      for (const keycode of parseKeycode(input)) {
+        yield new KeyPressEvent('keydown', keycode)
+      }
+    }
+
     for await (const key of keypress()) {
       if (key.sequence?.match(/\[\d+;\d+R/)) { // CSI 6 n response
         continue
