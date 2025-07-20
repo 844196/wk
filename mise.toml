@@ -27,7 +27,7 @@ depends = [
 
 [tasks.'build:internal']
 depends = 'bundle'
-run = 'deno compile --allow-all --target {{arg(name="target")}} --output dist/wk-{{arg(name="target")}} dist/wk.js'
+run = 'deno compile --no-code-cache --allow-all --target {{arg(name="target")}} --output dist/wk-{{arg(name="target")}} dist/wk.js'
 hide = true
 
 [tasks.bundle]
