@@ -31,9 +31,9 @@ _wk_widget() {
   reply=("${(@ps:\t:)res}")
 
   if [[ "${reply[(rb:2:)eval:*]}" == 'eval:true' ]]; then
-    BUFFER=${(e)reply[1]}
+    BUFFER="${LBUFFER}${(e)reply[1]}${RBUFFER}"
   else
-    BUFFER=${reply[1]}
+    BUFFER="${LBUFFER}${reply[1]}${RBUFFER}"
   fi
   CURSOR=${#BUFFER}
 
