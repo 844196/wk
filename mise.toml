@@ -23,7 +23,6 @@ depends = [
   'build:internal aarch64-unknown-linux-gnu',
   'build:internal x86_64-apple-darwin',
   'build:internal aarch64-apple-darwin',
-  'build:internal x86_64-pc-windows-msvc',
 ]
 
 [tasks.'build:internal']
