@@ -45,19 +45,38 @@ _wk_widget() {
 }
 zle -N _wk_widget
 
-<% if (!it.bindkeyGlobal) { %>
-_wk_or_self_insert() {
+_wk_widget_major() {
+  zle _wk_widget -- --inputs <%~ it.majorPrefix %>
+
+}
+zle -N _wk_widget_major
+
+<% if (it.leader !== undefined) { %>
+<% if (!it.bindGlobal) { %>
+_wk_self_insert_or_wk() {
   if [[ -z "$BUFFER" ]]; then
     zle _wk_widget
   else
     zle self-insert
   fi
 }
-zle -N _wk_or_self_insert
+zle -N _wk_self_insert_or_wk
 <% } %>
 
-<% if (typeof it.bindkey === 'string' && it.bindkey === "'") { %>
-bindkey "'" <%= it.bindkeyGlobal ? '_wk_widget' : '_wk_or_self_insert' %>
-<% } else if (typeof it.bindkey === 'string' && it.bindkey !== '') { %>
-bindkey '<%~ it.bindkey %>' <%= it.bindkeyGlobal ? '_wk_widget' : '_wk_or_self_insert' %>
+bindkey <%~ it.leader %> <%= it.bindGlobal ? '_wk_widget' : '_wk_self_insert_or_wk' %>
+<% } %>
+
+<% if (it.majorLeader !== undefined) { %>
+<% if (!it.bindGlobal) { %>
+_wk_self_insert_or_wk_major() {
+  if [[ -z "$BUFFER" ]]; then
+    zle _wk_widget_major
+  else
+    zle self-insert
+  fi
+}
+zle -N _wk_self_insert_or_wk_major
+<% } %>
+
+bindkey <%~ it.majorLeader %> <%= it.bindGlobal ? '_wk_widget_major' : '_wk_self_insert_or_wk_major' %>
 <% } %>

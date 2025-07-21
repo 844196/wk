@@ -2,7 +2,7 @@
 <p>&nbsp;</p>
 <img src="https://github.com/user-attachments/assets/07e6f86c-9f5c-4716-a07a-140dcb38efca" />
 <h1>wk</h1>
-<small><i>:keyboard: which-key like menu for shell</i></small>
+<small><i>:keyboard: which-key like menu for zsh</i></small>
 </div>
 
 ## :package: Installation
@@ -14,14 +14,15 @@
 2. Activate in `$ZDOTDIR/.zshrc`:
 
    ```shell
-   # Register a widget with the name "_wk_widget", and bind it to the ^G.
-   eval "$(wk init --bindkey '^G')"
+   # Bind space as the leader key and comma as the major-leader key.
+   # The major-prefix "m" is used for the major menu.
+   eval "$(wk init --leader ' ' --major-leader ',' --major-prefix 'm')"
    ```
 
 3. Restart zsh.
 
 > [!TIP]
-> If you want to register only the widget, change it as follows:
+> If you want to register only the widgets, change it as follows:
 >
 > ```shell
 > eval "$(wk init)"
