@@ -28,7 +28,10 @@ _wk_widget() {
       ;;
   esac
 
-  reply=("${(@ps:\t:)res}")
+  # `p` flag does NOT work with the ${var} format; must use $var instead.
+  # See: https://zsh.sourceforge.io/Doc/Release/Expansion.html#Parameter-Expansion
+  local delimiter=$res[1]
+  reply=("${(@ps:$delimiter:)${res:2}}")
 
   if [[ "${reply[(rb:2:)eval:*]}" == 'eval:true' ]]; then
     BUFFER="${LBUFFER}${(e)reply[1]}${RBUFFER}"

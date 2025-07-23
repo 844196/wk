@@ -34,7 +34,9 @@
           "type": "string"
         },
         "delimiter": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1
         },
         "eval": {
           "type": "boolean"
