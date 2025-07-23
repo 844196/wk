@@ -84,21 +84,21 @@ For example, this simulates pressing "g", "p", and "f".`,
 
       tui.close()
 
-      const outputs = [buffer]
+      const delimiter = typeof definedDelimiter === 'string' ? definedDelimiter : ctx.outputDelimiter
+
+      const outputs = [delimiter, buffer]
       for (const [k, v] of Object.entries(rest)) {
         switch (typeof v) {
           case 'string':
             outputs.push(`${k}:${v}`)
             break
           case 'boolean':
-            outputs.push(`${k}:${JSON.stringify(v)}`)
+            outputs.push(`${k}:${v ? 'true' : 'false'}`)
             break
           default:
             break
         }
       }
-
-      const delimiter = typeof definedDelimiter === 'string' ? definedDelimiter : ctx.outputDelimiter
 
       console.log(outputs.join(delimiter))
     } catch (e: unknown) {
