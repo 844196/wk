@@ -2,7 +2,9 @@
   "type": "object",
   "properties": {
     "outputDelimiter": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1
     },
     "timeout": {
       "type": "integer",
