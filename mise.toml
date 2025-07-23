@@ -12,7 +12,7 @@ run = 'deno lint'
 
 [tasks.'check:type']
 depends = 'generate:version'
-run = 'deno check src/cli.ts'
+run = 'deno check src/wk.ts'
 
 [tasks.'generate:version']
 run = 'echo "${VERSION:-unknown}" > VERSION'
@@ -27,9 +27,9 @@ depends = [
 
 [tasks.'build:internal']
 depends = 'bundle'
-run = 'deno compile --allow-all --target {{arg(name="target")}} --output dist/wk-{{arg(name="target")}} dist/wk.js'
+run = 'deno compile --allow-all --target {{arg(name="target")}} --output dist/wk-{{arg(name="target")}} dist/wk.bundle.js'
 hide = true
 
 [tasks.bundle]
 depends = 'generate:version'
-run = 'deno bundle --minify --output dist/wk.js src/cli.ts'
+run = 'deno bundle --minify --output dist/wk.bundle.js src/wk.ts'
