@@ -43,7 +43,7 @@ For example, this simulates pressing "g", "p", and "f".`,
     const fetchBindingsWaiting = Promise.all([
       loadYaml<Binding[]>(joinPath(XDG_CONFIG_HOME, 'wk', 'bindings.yaml')).catch(() => [] as Binding[]),
       loadYaml<Binding[]>(joinPath(Deno.cwd(), 'wk.bindings.yaml')).catch(() => [] as Binding[]),
-    ]).then(([globalBindings, localBindings]) => [...globalBindings, ...localBindings])
+    ]).then(([globalBindings, localBindings]) => globalBindings.concat(localBindings))
 
     const tty = await Deno.open('/dev/tty', { read: true, write: true })
     const tui = new TUI(tty, inputs === undefined ? [] : inputs.split(' ').map(unescapeAnsi))
