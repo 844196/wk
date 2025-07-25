@@ -2,7 +2,7 @@ import { Command, EnumType } from '@cliffy/command'
 import { join as joinPath } from '@std/path'
 import { parse as parseYaml } from '@std/yaml'
 import { Binding } from './types/Binding.ts'
-import { XDG_CONFIG_HOME } from './const.ts'
+import { WK_CONFIG_HOME } from './const.ts'
 import { TUI } from './tui.ts'
 import { defaultContext, mergeContext, PartialContext } from './types/Context.ts'
 import { Dependencies, main } from './main.ts'
@@ -31,9 +31,7 @@ For example, this simulates pressing "g", "p", and "f".`,
   )
   .action(async ({ upOneLine, inputs }) => {
     const fetchContextWaiting = (async () => {
-      const found = await loadYaml<PartialContext>(joinPath(XDG_CONFIG_HOME, 'wk', 'config.yaml')).catch(() =>
-        undefined
-      )
+      const found = await loadYaml<PartialContext>(joinPath(WK_CONFIG_HOME, 'config.yaml')).catch(() => undefined)
       if (found === undefined) {
         return defaultContext
       }
@@ -41,7 +39,7 @@ For example, this simulates pressing "g", "p", and "f".`,
     })()
 
     const fetchBindingsWaiting = Promise.all([
-      loadYaml<Binding[]>(joinPath(XDG_CONFIG_HOME, 'wk', 'bindings.yaml')).catch(() => [] as Binding[]),
+      loadYaml<Binding[]>(joinPath(WK_CONFIG_HOME, 'bindings.yaml')).catch(() => [] as Binding[]),
       loadYaml<Binding[]>(joinPath(Deno.cwd(), 'wk.bindings.yaml')).catch(() => [] as Binding[]),
     ]).then(([globalBindings, localBindings]) => globalBindings.concat(localBindings))
 
