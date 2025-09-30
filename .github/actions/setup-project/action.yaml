@@ -7,9 +7,7 @@ runs:
     - name: Setup mise
       uses: jdx/mise-action@v2
       with:
-        version: 2025.5.11
-        install: true
-        cache: true
+        version: 2025.9.25
 
     - name: Install dependencies
       shell: bash
