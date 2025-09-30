@@ -28,8 +28,8 @@ _wk_widget() {
       ;;
   esac
 
-  # `p` flag does NOT work with the ${var} format; must use $var instead.
-  # See: https://zsh.sourceforge.io/Doc/Release/Expansion.html#Parameter-Expansion
+  <%- /* `p` flag does NOT work with the ${var} format; must use $var instead. */ _%>
+  <%- /* See: https://zsh.sourceforge.io/Doc/Release/Expansion.html#Parameter-Expansion */ _%>
   local delimiter=$res[1]
   reply=("${(@ps:$delimiter:)${res:2}}")
 
