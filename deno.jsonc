@@ -11,7 +11,8 @@
     "lineWidth": 120,
     "indentWidth": 2,
     "semiColons": false,
-    "singleQuote": true
+    "singleQuote": true,
+    "exclude": ["**/*.md"]
   },
   "imports": {
     "@cliffy/ansi": "jsr:@cliffy/ansi@1.0.0-rc.7",
