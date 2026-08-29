@@ -1,0 +1,39 @@
+# vim: set ft=yaml:
+---
+types:
+  - # 新機能の追加
+    type: feat
+    section: Features
+    hidden: false
+  - # バグ修正
+    type: fix
+    section: Fixes
+    hidden: false
+  - # リファクタリング
+    type: refactor
+    section: Other
+    hidden: true
+  - # ドキュメントの追加・更新
+    type: docs
+    section: Documentation
+    hidden: true
+  - # フォーマット修正 (コードの動作に影響しない変更)
+    type: style
+    section: Other
+    hidden: true
+  - # パフォーマンス改善
+    type: perf
+    section: Other
+    hidden: true
+  - # テストコードの追加・修正
+    type: test
+    section: Other
+    hidden: true
+  - # メンテナンス作業
+    type: chore
+    section: Other
+    hidden: true
+
+# deps: 依存関係
+# ci: CI/CD (.github/workflows/ 等)
+scopeRegex: '^(?:deps|ci)(?:,(?:deps|ci))*$'

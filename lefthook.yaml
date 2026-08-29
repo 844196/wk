@@ -1,0 +1,8 @@
+pre-commit:
+  jobs:
+    - run: "mise run 'check:*'"
+    - run: mise run gha:lint
+commit-msg:
+  jobs:
+    - name: Validate commit message
+      run: cat {1} | convco check --from-stdin
