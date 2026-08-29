@@ -33,3 +33,12 @@ hide = true
 [tasks.bundle]
 depends = 'generate:version'
 run = 'deno bundle --minify --output dist/wk.bundle.js src/wk.ts'
+
+[tasks."gha:lint"]
+tools.actionlint = "1.7.10"
+tools.ghalint = "1.5.4"
+run = ["actionlint", "ghalint run"]
+
+[tasks."gha:pin"]
+tools.pinact = "4.1.1"
+run = ["pinact run --fix"]
