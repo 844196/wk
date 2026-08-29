@@ -1,5 +1,10 @@
 [tools]
 deno = '2.5.2'
+lefthook = "2.0.15"
+"github:convco/convco" = "0.6.2"
+
+[hooks]
+postinstall = "lefthook install"
 
 [tasks.check]
 depends = ['check:format', 'check:lint', 'check:type']
