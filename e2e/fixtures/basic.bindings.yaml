@@ -1,0 +1,17 @@
+- key: g
+  type: bindings
+  desc: Git
+  bindings:
+    - key: p
+      type: command
+      desc: Push
+      buffer: git push
+      eval: true
+    - key: y
+      type: command
+      desc: Pull
+      buffer: git pull
+- key: l
+  type: command
+  desc: List
+  buffer: ls -la

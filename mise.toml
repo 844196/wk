@@ -39,6 +39,17 @@ hide = true
 depends = 'generate:version'
 run = 'deno bundle --minify --output dist/wk.bundle.js src/wk.ts'
 
+[tasks.e2e]
+description = 'Build the binary for WK_E2E_TARGET and run the e2e suite'
+run = [
+  'mise run build:internal "${WK_E2E_TARGET:-x86_64-unknown-linux-gnu}"',
+  './e2e/run.sh',
+]
+
+[tasks.'e2e:only']
+description = 'Run the e2e suite against the binary already in dist/'
+run = './e2e/run.sh'
+
 [tasks."gha:lint"]
 tools.actionlint = "1.7.10"
 tools.ghalint = "1.5.4"

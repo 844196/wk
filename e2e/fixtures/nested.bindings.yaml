@@ -1,0 +1,28 @@
+- key: g
+  type: bindings
+  desc: Git
+  bindings:
+    - key: p
+      type: bindings
+      desc: Push
+      bindings:
+        - key: f
+          type: command
+          desc: Force
+          buffer: git push --force
+    - key: y
+      type: command
+      desc: Pull
+      buffer: git pull
+- key: d
+  type: bindings
+  desc: Docker
+  bindings:
+    - key: p
+      type: command
+      desc: Compose pull
+      buffer: docker compose pull
+- key: l
+  type: command
+  desc: List
+  buffer: ls -la
