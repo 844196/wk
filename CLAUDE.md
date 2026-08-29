@@ -20,9 +20,11 @@ zsh向けのwhich-keyライクメニュー。Deno製CLI (`src/wk.ts`) と、そ�
 
 ## 検証
 
-静的チェックは `mise run check` にまとまっている。`VERSION` はgitignoreされた生成物で `wk.ts` がraw-importしているため、素の `deno check src/wk.ts` は `TS2307` で落ちる。型チェックは `mise run check:type` 経由で走らせる。テストコードは無い。`src/main.ts` はキー入力ループを `Dependencies` で注入する形になっているが、まだ差し替え先が存在しない。
+静的チェックは `mise run check` にまとまっている。`VERSION` はgitignoreされた生成物で `wk.ts` がraw-importしているため、素の `deno check src/wk.ts` は `TS2307` で落ちる。型チェックは `mise run check:type` 経由で走らせる。`src/main.ts` はキー入力ループを `Dependencies` で注入する形になっているが、まだ差し替え先が存在しない。
 
-実行しての確認には制約がある。`wk run` は実ttyを要求するので、エージェントのシェルからは `open '/dev/tty'` で即エラーになる。挙動確認が要るときはユーザーに実端末で叩いてもらう。`--inputs 'g p f'` を渡せばキー入力を再現できる。`wk init` が埋め込むパスは `Deno.execPath()` なので、`deno run` 経由だとdeno自身のパスが入る。ウィジェットの実挙動を見るなら `mise run build` したバイナリを使う。
+e2eテストが `e2e/` にある。`mise run e2e` でバイナリをビルドしてから走らせ、`mise run e2e:only` は `dist/` の既存バイナリをそのまま使う。Docker (zsh/tmux/bats-core、Denoは入れない) の中でbats-coreを回し、対象バイナリは `WK_BIN` で受け取る黒箱テスト。将来Denoをやめても受け入れ仕様として使い回せるよう、テスト側からDenoを参照しないこと。層は3つ — `script(1)` でptyを張ってCLIを直叩き (`helpers/common.bash` の `wk_run`)、TTY不要の `wk init`、tmuxで実zshウィジェットを動かす (`helpers/tmux.bash`)。ユニットテストは無い。
+
+実行しての確認は `script -qec '<cmd>' /dev/null` でptyを張ればエージェントのシェルからでもできる。ただし `--up-one-line auto` は `getCursorPosition()` がCSI 6nの応答を待って永久にブロックするので、pty直叩きでは `--up-one-line false` を必ず渡す。`auto` を見たいならtmux層で。`--inputs 'g p f'` でキー入力を再現できるが、空白区切りでsplitしてから `\xHH` を解くので、空白キー自体は `\x20` と書く。ZDOTDIRに置いた `.zshrc` を読ませるには `zsh -d -i` (`-f` はNO_RCSでrcを一切読まない)。tmuxの `capture-pane -p` は行末の空白を落とすので、プロンプト `'% '` のような末尾空白は一致しない。`wk init` が埋め込むパスは `Deno.execPath()` なので、`deno run` 経由だとdeno自身のパスが入る。ウィジェットの実挙動を見るなら `mise run build` したバイナリを使う。
 
 ## コミット
 

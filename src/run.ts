@@ -31,6 +31,10 @@ For example, this simulates pressing "g", "p", and "f".`,
   )
   .action(async ({ upOneLine, inputs }) => {
     const fetchContextWaiting = (async () => {
+      // FIXME: parseYaml() returns null for an empty document, so .catch() never
+      // fires, `found === undefined` is false, and mergeContext(null) throws.
+      // A parse failure is a separate problem: it is swallowed here, which makes
+      // a typo in config.yaml indistinguishable from having no config.yaml.
       const found = await loadYaml<PartialContext>(joinPath(WK_CONFIG_HOME, 'config.yaml')).catch(() => undefined)
       if (found === undefined) {
         return defaultContext
@@ -38,6 +42,11 @@ For example, this simulates pressing "g", "p", and "f".`,
       return mergeContext(found)
     })()
 
+    // FIXME: parseYaml() returns null for an empty document, so .catch() never
+    // fires. A null global throws on .concat(); a null local survives concat()
+    // and only throws later, while the menu is drawn.
+    // A parse failure is a separate problem: it is swallowed here, which makes
+    // a typo in bindings.yaml indistinguishable from having no bindings.
     const fetchBindingsWaiting = Promise.all([
       loadYaml<Binding[]>(joinPath(WK_CONFIG_HOME, 'bindings.yaml')).catch(() => [] as Binding[]),
       loadYaml<Binding[]>(joinPath(Deno.cwd(), 'wk.bindings.yaml')).catch(() => [] as Binding[]),

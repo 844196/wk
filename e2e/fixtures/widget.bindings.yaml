@@ -1,0 +1,43 @@
+- key: g
+  type: bindings
+  desc: Git
+  bindings:
+    - key: p
+      type: command
+      desc: Push
+      buffer: git push
+- key: e
+  type: command
+  desc: Expand
+  buffer: $WK_TEST_VAR
+  eval: true
+- key: E
+  type: command
+  desc: Literal
+  buffer: $WK_TEST_VAR
+- key: s
+  type: command
+  desc: Substitute
+  buffer: $(printf substituted)
+  eval: true
+- key: a
+  type: command
+  desc: Accept
+  buffer: 'printf "accepted-%s\n" ok'
+  accept: true
+- key: x
+  type: command
+  desc: Insert X
+  buffer: X
+- key: l
+  type: command
+  desc: List
+  buffer: ls -la
+- key: m
+  type: bindings
+  desc: Major
+  bindings:
+    - key: t
+      type: command
+      desc: Test
+      buffer: make test
