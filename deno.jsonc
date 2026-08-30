@@ -12,7 +12,7 @@
     "indentWidth": 2,
     "semiColons": false,
     "singleQuote": true,
-    "exclude": ["**/*.md"]
+    "exclude": ["**/*.md", ".claude/**"]
   },
   "imports": {
     "@cliffy/ansi": "jsr:@cliffy/ansi@1.0.0-rc.7",
