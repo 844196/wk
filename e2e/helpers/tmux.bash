@@ -53,7 +53,7 @@ append_zshrc() {
 # start_zsh_session — start zsh under tmux and wait for its first prompt.
 start_zsh_session() {
   # `zsh -f` would skip the rc entirely (NO_RCS); -d only disables /etc/z*.
-  wk_tmux new-session -d -x 80 -y 24 \
+  wk_tmux new-session -d -x "${WK_TMUX_WIDTH:-80}" -y "${WK_TMUX_HEIGHT:-24}" \
     -e "ZDOTDIR=${ZDOTDIR}" \
     -e "HOME=${HOME}" \
     -e "XDG_CONFIG_HOME=${XDG_CONFIG_HOME}" \
@@ -83,7 +83,7 @@ start_wk_session() {
 # start_command_session <shell-command> — run an arbitrary command in a pane.
 # Used when the state of the terminal before wk starts is part of the test.
 start_command_session() {
-  wk_tmux new-session -d -x 80 -y 24 \
+  wk_tmux new-session -d -x "${WK_TMUX_WIDTH:-80}" -y "${WK_TMUX_HEIGHT:-24}" \
     -e "HOME=${HOME}" \
     -e "XDG_CONFIG_HOME=${XDG_CONFIG_HOME}" \
     -e 'TERM=xterm-256color' \
