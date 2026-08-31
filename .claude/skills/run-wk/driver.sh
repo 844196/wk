@@ -59,8 +59,9 @@ root="$(cd "${here}/../../.." && pwd)" ||
 target="${WK_TARGET:-x86_64-unknown-linux-gnu}"
 bin="${WK_BIN:-${root}/dist/wk-${target}}"
 # `-` not `:-`: WK_BINDINGS= (explicitly empty) means "seed no bindings.yaml at
-# all", which is a different case from an empty file — the missing file is
-# handled, an empty one crashes wk. See the crash list in SKILL.md.
+# all", which `:-` would silently turn back into the default fixture. wk folds
+# an empty file into the same absent-file handling, so the two now behave
+# alike, but seeding a file and seeding none stay separate cases to set up.
 bindings="${WK_BINDINGS-${root}/e2e/fixtures/widget.bindings.yaml}"
 
 # 125 is deliberately outside wk's range (0-6) and distinct from the 124 that
@@ -374,7 +375,7 @@ cmd_keys() {
 explain_exit() {
   case "$1" in
     0) echo '(selected a command)' ;;
-    1) echo '(uncaught error — read stderr; an empty bindings.yaml and a blank --inputs both land here)' ;;
+    1) echo '(uncaught error — read stderr; a non-array bindings.yaml and a blank --inputs both land here)' ;;
     2) echo '(bad CLI arguments)' ;;
     3) echo '(abort: escape / ctrl-c / ctrl-d / backspace at root)' ;;
     4) echo '(timeout — config.yaml timeout elapsed)' ;;

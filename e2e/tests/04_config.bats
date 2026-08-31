@@ -126,18 +126,16 @@ YAML
   assert_equal "$output" $'\t\tfrom-home'
 }
 
-@test "an empty bindings file crashes instead of being read as empty" {
-  # Records the current behaviour; see the FIXME in run.ts. An empty document
-  # parses to null, which .catch() never sees.
+@test "an empty bindings file is read as empty" {
   : >"${XDG_CONFIG_HOME}/wk/bindings.yaml"
 
   wk_run --inputs 'l'
 
-  assert_equal "$status" 1
-  assert_stderr_contains "reading 'concat'"
+  assert_equal "$status" 5
+  assert_equal "$stderr" '"l" is undefined'
 }
 
-@test "an empty local bindings file crashes later, while drawing the menu" {
+@test "an empty local bindings file leaves the global bindings alone" {
   write_bindings <<'YAML'
 - key: l
   type: command
@@ -147,13 +145,11 @@ YAML
 
   wk_run --inputs 'l'
 
-  # concat(null) does not throw, so the null slips into the binding list and
-  # only fails once a row is rendered.
-  assert_equal "$status" 1
-  assert_stderr_contains "reading 'icon'"
+  assert_equal "$status" 0
+  assert_equal "$output" $'\t\tls -la'
 }
 
-@test "an empty config file crashes instead of falling back to the defaults" {
+@test "an empty config file falls back to the defaults" {
   write_bindings <<'YAML'
 - key: l
   type: command
@@ -163,6 +159,19 @@ YAML
 
   wk_run --inputs 'l'
 
-  assert_equal "$status" 1
-  assert_stderr_contains "reading 'symbols'"
+  assert_equal "$status" 0
+  assert_equal "$output" $'\t\tls -la'
+}
+
+@test "a bindings file holding only comments is read as empty" {
+  # "Empty" is wider than zero bytes: a lone newline, whitespace, comments,
+  # `---`, `null` and `~` all parse to null too.
+  write_bindings <<'YAML'
+# TODO: add some bindings
+YAML
+
+  wk_run --inputs 'l'
+
+  assert_equal "$status" 5
+  assert_equal "$stderr" '"l" is undefined'
 }

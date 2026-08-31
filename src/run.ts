@@ -9,9 +9,11 @@ import { Dependencies, main } from './main.ts'
 import { getKeySymbol, renderPrompt, renderTable } from './ui.ts'
 import { AbortError, KeyParseError, UndefinedKeyError } from './errors.ts'
 
-async function loadYaml<T>(path: string) {
+async function loadYaml<T>(path: string, fallback: T) {
   const text = await Deno.readTextFile(path)
-  return parseYaml(text) as T
+  // An empty document — blank, comments only, `---`, `null`, `~` — parses to
+  // null. Treat it exactly like an absent file.
+  return (parseYaml(text) ?? fallback) as T
 }
 
 function unescapeAnsi(given: string): string {
@@ -31,25 +33,18 @@ For example, this simulates pressing "g", "p", and "f".`,
   )
   .action(async ({ upOneLine, inputs }) => {
     const fetchContextWaiting = (async () => {
-      // FIXME: parseYaml() returns null for an empty document, so .catch() never
-      // fires, `found === undefined` is false, and mergeContext(null) throws.
-      // A parse failure is a separate problem: it is swallowed here, which makes
-      // a typo in config.yaml indistinguishable from having no config.yaml.
-      const found = await loadYaml<PartialContext>(joinPath(WK_CONFIG_HOME, 'config.yaml')).catch(() => undefined)
-      if (found === undefined) {
-        return defaultContext
-      }
+      // FIXME: a parse failure is swallowed here, which makes a typo in
+      // config.yaml indistinguishable from having no config.yaml.
+      const found = await loadYaml<PartialContext>(joinPath(WK_CONFIG_HOME, 'config.yaml'), {})
+        .catch(() => ({} as PartialContext))
       return mergeContext(found)
     })()
 
-    // FIXME: parseYaml() returns null for an empty document, so .catch() never
-    // fires. A null global throws on .concat(); a null local survives concat()
-    // and only throws later, while the menu is drawn.
-    // A parse failure is a separate problem: it is swallowed here, which makes
-    // a typo in bindings.yaml indistinguishable from having no bindings.
+    // FIXME: a parse failure is swallowed here, which makes a typo in
+    // bindings.yaml indistinguishable from having no bindings.
     const fetchBindingsWaiting = Promise.all([
-      loadYaml<Binding[]>(joinPath(WK_CONFIG_HOME, 'bindings.yaml')).catch(() => [] as Binding[]),
-      loadYaml<Binding[]>(joinPath(Deno.cwd(), 'wk.bindings.yaml')).catch(() => [] as Binding[]),
+      loadYaml<Binding[]>(joinPath(WK_CONFIG_HOME, 'bindings.yaml'), []).catch(() => [] as Binding[]),
+      loadYaml<Binding[]>(joinPath(Deno.cwd(), 'wk.bindings.yaml'), []).catch(() => [] as Binding[]),
     ]).then(([globalBindings, localBindings]) => globalBindings.concat(localBindings))
 
     const tty = await Deno.open('/dev/tty', { read: true, write: true })

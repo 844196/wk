@@ -132,8 +132,10 @@ BUFFER=[make test] CURSOR=[9]
 
 どれも exit 1 で、`screen` では `wk exited before drawing a menu` に見える。
 
-- **空の `bindings.yaml`** — `Cannot read properties of null (reading 'concat')`。`parseYaml()` が空ドキュメントに `null` を返すのに `src/run.ts` の `.catch()` が発火しない (同ファイルの FIXME)。**ファイル不在なら正常に動く** (全キー未定義 = exit 5)。`WK_BINDINGS` に空ファイルを渡すか `WK_BINDINGS=` にするかで撃ち分けられる。
-- **`desc` の無い `type: bindings`** — `Cannot read properties of undefined (reading 'replace')`。スキーマ違反として弾かれるのではなく**そのグループを描く瞬間に落ちる**ので、最上段なら起動直後、下の階層ならそこへ降りたとき。フィクスチャの必須フィールドは `key` / `type` / `buffer` の 3 つだけ (`schemas/bindings.json`) だが、グループの `desc` はこの通り実質必須。
+- **配列でない `bindings.yaml`** (スカラや mapping) — **グローバルとローカルで症状が違う。** `src/run.ts` は `globalBindings.concat(localBindings)` の形なので、グローバル側が配列でなければ `s.concat is not a function` で即死する。ローカル側は `concat()` の引数なので**落ちずに 1 要素として連結され**、描画時に `Cannot read properties of undefined (reading 'replace')` になる。パースは通るため `.catch()` はどちらでも発火しない。
+- **`desc` の無い `type: bindings`** — `Cannot read properties of undefined (reading 'replace')`。スキーマ違反として弾かれるのではなく**そのグループを描く瞬間に落ちる**ので、最上段なら起動直後、下の階層ならそこへ降りたとき。フィクスチャの必須フィールドは `key` / `type` / `buffer` の 3 つだけ (`schemas/bindings.json`) だが、グループの `desc` はこの通り実質必須。**この `reading 'replace'` は 1 つ上の「配列でないローカル `wk.bindings.yaml`」と同じ字面**なので、どちらか決め打ちせず両方のファイルを見る。
 - **`--inputs ' '`** — 空白 split の結果が空文字列 2 つになりキーコードパーサが落ちる。スペースキーは `\x20`。
+
+**空ファイルは落ちない。** 空ドキュメント (0 バイト・改行だけ・空白だけ・コメントだけ・`---`・`null`・`~`) は `src/run.ts` の `loadYaml()` が不在ファイルと同じ扱いに畳む。bindings なら全キー未定義 = exit 5、config なら既定値。
 
 **虚像 — `$PWD/wk.bindings.yaml` は `XDG_CONFIG_HOME` 側を上書きせず後ろに連結される。** 同じキーがあるとメニューには 2 行とも出るが、選ばれるのは先にある XDG 側で、ローカル側は表示だけされて到達不能になる。
