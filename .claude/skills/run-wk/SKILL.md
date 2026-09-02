@@ -41,9 +41,9 @@ stdout: \t\tgit push
 
 **1 つ目のフィールドは区切り文字そのもの**なので、buffer の前に区切り文字が 2 個並ぶ。`src/run.ts` が `[delimiter, buffer, ...].join(delimiter)` を出しており、1 個目はフィールドの中身、2 個目は join の区切り。受け側の `src/widget.eta` が `${res:2}` で捨てているのはこの 2 つ。末尾に改行が 1 個付く (`console.log` 由来、driver の `stdout:` 行では落としている)。
 
-**`key:value` の並びは YAML の記述順**。`src/run.ts` が `...rest` を `Object.entries()` で回すため、`accept` を先に書けば `accept:true` が先に出る。受け側が並び順を前提にすると壊れる。**`false` も省略されない** — 出るかどうかを決めるのは値ではなくキーが YAML にあるかどうかで、`eval: false` は `eval:false` として出る (キーごと省いた場合とは別物)。
+**`key:value` の並び順は保証しない。** `src/run.ts` は `...rest` を `Object.entries()` で回すが、その `rest` は zod が組み直したオブジェクトなので、schema が名前で持つ `eval` / `accept` が schema の順で先に出て、それ以外の追加フィールドがファイル順で続く (`accept` を先に書いても `eval:true accept:true` の順)。受け側は位置ではなく `key:` で引くこと — `src/widget.eta` の `reply[(rb:2:)eval:*]` がそうしている。**`false` も省略されない** — 出るかどうかを決めるのは値ではなくキーが YAML にあるかどうかで、`eval: false` は `eval:false` として出る (キーごと省いた場合とは別物)。
 
-**区切り文字は、その buffer に出てこない 1 文字にする。** 受け側の `${(@ps:$delimiter:)...}` は buffer 内の同じ文字も境界として split するので、既定のタブのままだと `buffer: "echo a\tb"` は `BUFFER=[echo a]` になる。バインディング単位の `delimiter` (`schemas/bindings.json`、1 文字) はこのためにあるが、**与えれば直るのではなく、衝突しない文字を選んで初めて直る** — 同じ buffer に `delimiter: 'b'` を与えると今度は `BUFFER=[echo a<TAB>]` で切れる。config 全体の `outputDelimiter` ではなくバインディング単位で与えるのが正しい形。
+**区切り文字は、その buffer に出てこない 1 文字にする。** 受け側の `${(@ps:$delimiter:)...}` は buffer 内の同じ文字も境界として split するので、既定のタブのままだと `buffer: "echo a\tb"` は `BUFFER=[echo a]` になる。バインディング単位の `delimiter` (`src/schema.ts`、1 文字) はこのためにあるが、**与えれば直るのではなく、衝突しない文字を選んで初めて直る** — 同じ buffer に `delimiter: 'b'` を与えると今度は `BUFFER=[echo a<TAB>]` で切れる。config 全体の `outputDelimiter` ではなくバインディング単位で与えるのが正しい形。
 
 既定フィクスチャの区切り文字はタブなので、`\t\t` を見ても「1 つ目のフィールドだから 2 個」なのか「buffer にタブがある」のか区別できない。撃ち分けるには `delimiter: '|'` を持つバインディングを `$SP` に置く (`stdout: ||echo hi|eval:true` のように先頭 2 文字も追従する)。生バイトは `TMPDIR=$SP WK_KEEP=1` で残るサンドボックスの `out` / `err` / `status` で見る (パスは stderr に出る)。
 
@@ -72,7 +72,7 @@ $ WK_BINDINGS=e2e/fixtures/nested.bindings.yaml ./.claude/skills/run-wk/driver.s
 
 パンくずに並ぶのは desc ではなく**押したキー**。**`type: command` を選ぶと `wk run` が終了する = ペインも消える**ので、リーフまで降りると画面は残らない。これは成功で、出力は `keys` で見る。
 
-画面に出る記号はどれも `config.yaml` の `symbols` で差し替えられる (`src/types/Context.ts` の `defaultContext`)。
+画面に出る記号はどれも `config.yaml` の `symbols` で差し替えられる (`src/schema.ts` の `defaultContext`)。
 
 | 画面上 | `symbols` のキー | 既定値 | 出る場所 |
 |---|---|---|---|
@@ -88,7 +88,7 @@ $ WK_BINDINGS=e2e/fixtures/nested.bindings.yaml ./.claude/skills/run-wk/driver.s
 
 `timeout` のように**時間で消えるものは、キーごとの待ち (`WK_SETTLE`、既定 0.4 秒) より短ければ写らない。** 消えたのか出なかったのかは `keys` に流せば分かる (exit 4)。
 
-driver が 125 で止まる 2 つのメッセージは意味が正反対で、**ペインが生きているか**と所要時間で見分ける。`wk exited before drawing a menu` はペインが死んでいて即座 — wk のクラッシュか即終了で、原因は下の 3 つと**ポーリング粒度 0.05 秒より短い `timeout`** (この場合は一度描いてから消しているので字面と実態がずれる)。`menu never appeared` はペインが生きたまま 5 秒 — wk は正常にキー待ちで、`keys <key>` を送れば応答する。
+driver が 125 で止まる 2 つのメッセージは意味が正反対で、**ペインが生きているか**と所要時間で見分ける。`wk exited before drawing a menu` はペインが死んでいて即座 — wk のクラッシュか即終了で、原因は「弾かれる入力・落ちる入力」の節のものと**ポーリング粒度 0.05 秒より短い `timeout`** (この場合は一度描いてから消しているので字面と実態がずれる)。`menu never appeared` はペインが生きたまま 5 秒 — wk は正常にキー待ちで、`keys <key>` を送れば応答する。
 
 ## widget — zsh の BUFFER まで
 
@@ -128,13 +128,13 @@ $ WK_LEADER='^O' WK_PRETYPE=',' ./.claude/skills/run-wk/driver.sh widget t
 BUFFER=[make test] CURSOR=[9]
 ```
 
-## 落ちる入力
+## 弾かれる入力・落ちる入力
 
-どれも exit 1 で、`screen` では `wk exited before drawing a menu` に見える。
+**設定ファイルの不備は落ちずに exit 7 になる。** stderr は `<ファイル>: <パス>: <期待>` の 1 行で、パスが悪いフィールドまで案内する (`.../bindings.yaml: [0].bindings[0].key: expected a key name or a digit 0-9`)。`screen` からは `wk exited before drawing a menu` に見えるだけなので、**原因は `keys` に流して stderr を読む。** 配列でない `bindings.yaml`、`desc` の無い `type: bindings`、`bindings:` にスカラを置いたグループ、`buffer: 42`、`colors.prompt: {}`、`outputDelimiter: 42` — 描画時にスタックトレースを吐いていた入力は全部ここに畳まれている。グローバルとローカルで症状が変わることも無い。
 
-- **配列でない `bindings.yaml`** (スカラや mapping) — **グローバルとローカルで症状が違う。** `src/run.ts` は `globalBindings.concat(localBindings)` の形なので、グローバル側が配列でなければ `s.concat is not a function` で即死する。ローカル側は `concat()` の引数なので**落ちずに 1 要素として連結され**、描画時に `Cannot read properties of undefined (reading 'replace')` になる。パースは通るため `.catch()` はどちらでも発火しない。
-- **`desc` の無い `type: bindings`** — `Cannot read properties of undefined (reading 'replace')`。スキーマ違反として弾かれるのではなく**そのグループを描く瞬間に落ちる**ので、最上段なら起動直後、下の階層ならそこへ降りたとき。フィクスチャの必須フィールドは `key` / `type` / `buffer` の 3 つだけ (`schemas/bindings.json`) だが、グループの `desc` はこの通り実質必須。**この `reading 'replace'` は 1 つ上の「配列でないローカル `wk.bindings.yaml`」と同じ字面**なので、どちらか決め打ちせず両方のファイルを見る。
-- **`--inputs ' '`** — 空白 split の結果が空文字列 2 つになりキーコードパーサが落ちる。スペースキーは `\x20`。
+**`key` はクォート無しの数字でも通る。** YAML が数値にした `0`〜`9` は wk が文字列に戻す。**クォートが要るのは YAML のインジケータ文字だけ** — `.` / `$` / `(` / `)` / `+` / `/` / `;` / `<` / `=` / `\` / `^` / `_` はそのまま通る。クォート無しだと `~` / `!` / `?` / `#` は null になって wk が弾き、`"` / `%` / `&` / `'` / `*` / `,` / `-` / `:` / `@` / `[` / `]` / `` ` `` / `{` / `}` は YAML 側の構文エラー、`>` / `|` はブロックスカラ扱いで空文字列になって wk が弾く。どれも exit 7 だが、構文エラーの文言だけパーサ由来。
+
+**exit 1 で落ちるのは `--inputs ' '` だけ。** 空白 split の結果が空文字列 2 つになりキーコードパーサが落ちる。スペースキーは `\x20`。
 
 **空ファイルは落ちない。** 空ドキュメント (0 バイト・改行だけ・空白だけ・コメントだけ・`---`・`null`・`~`) は `src/run.ts` の `loadYaml()` が不在ファイルと同じ扱いに畳む。bindings なら全キー未定義 = exit 5、config なら既定値。
 

@@ -39,7 +39,7 @@
 #   WK_SETTLE    seconds to wait after each key (default: 0.4 screen, 0.6 widget)
 #
 # Exit status:
-#   `keys` exits with wk's own exit code (0/1/2/3/4/5/6, or 124 when wk was
+#   `keys` exits with wk's own exit code (0/1/2/3/4/5/6/7, or 124 when wk was
 #   still waiting for a key), so `driver.sh keys g p || ...` works from a
 #   script. 1 is an uncaught error and is reachable from ordinary fixtures.
 #   The other subcommands exit 0 on success. A driver-level failure — no binary,
@@ -249,7 +249,7 @@ wait_for_screen() {
 
 # capture-pane strips trailing whitespace and tmux has already resolved the ANSI
 # colours away. The first line looks empty but is not: the default prompt symbol
-# in src/types/Context.ts is a Nerd Font glyph (U+F460), which most terminals and
+# in src/schema.ts is a Nerd Font glyph (U+F460), which most terminals and
 # every grep-based assertion render as nothing useful. Match on a binding row
 # instead of the prompt.
 # The widget layer's startup marker (below) is scaffolding, not evidence; drop
@@ -375,12 +375,13 @@ cmd_keys() {
 explain_exit() {
   case "$1" in
     0) echo '(selected a command)' ;;
-    1) echo '(uncaught error — read stderr; a non-array bindings.yaml and a blank --inputs both land here)' ;;
+    1) echo '(uncaught error — read stderr; a blank --inputs lands here)' ;;
     2) echo '(bad CLI arguments)' ;;
     3) echo '(abort: escape / ctrl-c / ctrl-d / backspace at root)' ;;
     4) echo '(timeout — config.yaml timeout elapsed)' ;;
     5) echo '(undefined key)' ;;
     6) echo '(key parse failure)' ;;
+    7) echo '(bad config.yaml or bindings.yaml — stderr names the file and the field)' ;;
     124) echo '(driver timeout: wk was still waiting for a key)' ;;
     *) echo '(unknown)' ;;
   esac
