@@ -36,14 +36,14 @@ jobs:
       - name: Setup project
         uses: ./.github/actions/setup-project
 
-      - name: Run build
-        run: VERSION=${{ github.ref_name }} mise run build:internal ${{ matrix.target }}
+      - name: Run dist
+        run: VERSION=${{ github.ref_name }} mise run dist ${{ matrix.target }}
 
-      - name: Upload binary
+      - name: Upload tarball
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: binary-${{ matrix.target }}
-          path: dist/wk-${{ matrix.target }}
+          name: tarball-${{ matrix.target }}
+          path: dist/wk-${{ matrix.target }}.tar.gz
           if-no-files-found: error
           retention-days: 1
 
@@ -84,10 +84,10 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Download binaries
+      - name: Download tarballs
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          pattern: binary-*
+          pattern: tarball-*
           path: dist
           merge-multiple: true
 
@@ -97,6 +97,6 @@ jobs:
           name: release-notes
 
       - name: Create draft release
-        run: gh release create ${{ github.ref_name }} dist/wk-* --repo ${{ github.repository }} --draft --title ${{ github.ref_name }} --notes-file release-notes.md --verify-tag
+        run: gh release create ${{ github.ref_name }} dist/wk-*.tar.gz --repo ${{ github.repository }} --draft --title ${{ github.ref_name }} --notes-file release-notes.md --verify-tag
         env:
           GH_TOKEN: ${{ github.token }}

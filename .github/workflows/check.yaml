@@ -52,6 +52,11 @@ jobs:
       - name: Run build
         run: mise run build
 
+      # Also exercises schema generation and packaging, so that a broken
+      # release tarball is caught before the tag is pushed.
+      - name: Run dist
+        run: mise run dist x86_64-unknown-linux-gnu
+
   e2e:
     name: E2E
     runs-on: ubuntu-24.04

@@ -1,10 +1,9 @@
 import { Command, EnumType } from '@cliffy/command'
 import { join as joinPath } from '@std/path'
 import { parse as parseYaml } from '@std/yaml'
-import { Binding } from './types/Binding.ts'
 import { WK_CONFIG_HOME } from './const.ts'
 import { TUI } from './tui.ts'
-import { defaultContext, mergeContext, PartialContext } from './types/Context.ts'
+import type { Binding, ParseResult } from './schema.ts'
 import { Dependencies, main } from './main.ts'
 import { getKeySymbol, renderPrompt, renderTable } from './ui.ts'
 import { AbortError, ConfigError, KeyParseError, UndefinedKeyError } from './errors.ts'
@@ -20,19 +19,10 @@ function summarize(e: unknown): string {
   return message.split('\n')[0].replace(/: \w+ '.*'$/, '').replace(/:$/, '')
 }
 
-function isPartialContext(given: unknown): given is PartialContext {
-  return typeof given === 'object' && given !== null && !Array.isArray(given)
-}
-
-function isBindings(given: unknown): given is Binding[] {
-  return Array.isArray(given) &&
-    given.every((b) => typeof b === 'object' && b !== null && typeof (b as { key?: unknown }).key === 'string')
-}
-
 // A missing file is the only silent fallback. Anything else — a syntax error, a
 // shape mismatch, EACCES, EISDIR — stops wk, so that a typo cannot quietly
 // change how it behaves.
-async function loadYaml<T>(path: string, fallback: T, isValid: (given: unknown) => given is T): Promise<T> {
+async function loadYaml<T>(path: string, fallback: T, parse: (given: unknown) => ParseResult<T>): Promise<T> {
   let text: string
   try {
     text = await Deno.readTextFile(path)
@@ -56,11 +46,12 @@ async function loadYaml<T>(path: string, fallback: T, isValid: (given: unknown) 
     return fallback
   }
 
-  if (!isValid(parsed)) {
-    throw new ConfigError(path, 'invalid format')
+  const result = parse(parsed)
+  if (!result.ok) {
+    throw new ConfigError(path, result.reason)
   }
 
-  return parsed
+  return result.value
 }
 
 function abbreviateHome(path: string): string {
@@ -89,10 +80,16 @@ For example, this simulates pressing "g", "p", and "f".`,
   .action(async ({ upOneLine, inputs }) => {
     // Read in a fixed order and one at a time, so that the first broken file is
     // the one reported and the rest are left untouched.
+    // Loaded here rather than at the top of the file: pulling in the schema
+    // costs a few milliseconds, and `wk init` — which runs from `.zshrc` on
+    // every new shell — has no configuration to validate.
+    const { defaultContext, parseBindings, parseContext } = await import('./schema.ts')
+
     const load = async () => {
-      const ctx = mergeContext(await loadYaml(joinPath(WK_CONFIG_HOME, 'config.yaml'), {}, isPartialContext))
-      const globalBindings = await loadYaml(joinPath(WK_CONFIG_HOME, 'bindings.yaml'), [], isBindings)
-      const localBindings = await loadYaml(joinPath(Deno.cwd(), 'wk.bindings.yaml'), [], isBindings)
+      const ctx = await loadYaml(joinPath(WK_CONFIG_HOME, 'config.yaml'), defaultContext, parseContext)
+      const empty: Binding[] = []
+      const globalBindings = await loadYaml(joinPath(WK_CONFIG_HOME, 'bindings.yaml'), empty, parseBindings)
+      const localBindings = await loadYaml(joinPath(Deno.cwd(), 'wk.bindings.yaml'), empty, parseBindings)
       return [ctx, globalBindings.concat(localBindings)] as const
     }
 
@@ -137,18 +134,11 @@ For example, this simulates pressing "g", "p", and "f".`,
 
       const delimiter = typeof definedDelimiter === 'string' ? definedDelimiter : ctx.outputDelimiter
 
+      // The schema has already narrowed every extra field to a string or a
+      // boolean, and a boolean interpolates as `true` / `false` on its own.
       const outputs = [delimiter, buffer]
       for (const [k, v] of Object.entries(rest)) {
-        switch (typeof v) {
-          case 'string':
-            outputs.push(`${k}:${v}`)
-            break
-          case 'boolean':
-            outputs.push(`${k}:${v ? 'true' : 'false'}`)
-            break
-          default:
-            break
-        }
+        outputs.push(`${k}:${v}`)
       }
 
       console.log(outputs.join(delimiter))

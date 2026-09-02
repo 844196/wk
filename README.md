@@ -7,11 +7,23 @@
 
 ## :package: Installation
 
-1. Download the latest release and put into your `$PATH`:
+1. Download the archive for your platform from the latest release and extract it:
 
    <https://github.com/844196/wk/releases/latest>
 
-2. Activate in `$ZDOTDIR/.zshrc`:
+   ```shell
+   tar xzf wk-x86_64-unknown-linux-gnu.tar.gz
+   ```
+
+   It holds the `wk` binary, the JSON Schemas for the configuration files, and the license.
+
+2. Put the binary into your `$PATH`:
+
+   ```shell
+   install -m 755 wk-x86_64-unknown-linux-gnu/wk ~/.local/bin/
+   ```
+
+3. Activate in `$ZDOTDIR/.zshrc`:
 
    ```shell
    # Bind space as the leader key and comma as the major-leader key.
@@ -19,7 +31,7 @@
    eval "$(wk init --leader ' ' --major-leader ',' --major-prefix 'm')"
    ```
 
-3. Restart zsh.
+4. Restart zsh.
 
 > [!TIP]
 > If you want to register only the widgets, change it as follows:
@@ -59,7 +71,11 @@ colors:
   bindingDescription: 8
 ```
 
-See [schemas/config.json](./schemas/config.json) for more details.
+Point your editor at the schema in the extracted archive to get completion and validation:
+
+```yaml
+# yaml-language-server: $schema=/path/to/wk-x86_64-unknown-linux-gnu/schemas/config.json
+```
 
 ### Global bindings
 
@@ -100,7 +116,16 @@ See [schemas/config.json](./schemas/config.json) for more details.
       accept: true
 ```
 
-See [schemas/bindings.json](./schemas/bindings.json) for more details.
+Point your editor at the schema in the extracted archive to get completion and validation:
+
+```yaml
+# yaml-language-server: $schema=/path/to/wk-x86_64-unknown-linux-gnu/schemas/bindings.json
+```
+
+A `key` is the key to press. YAML reads an unquoted digit as a number, and wk reads it back as that
+digit, so `key: 1` and `key: '1'` both bind the `1` key. Most punctuation needs no quoting either —
+`key: .` above is one. YAML's indicator characters do, though: unquoted they are read as null or
+rejected outright, so write `key: '~'` and `key: ':'`.
 
 ### Local bindings
 

@@ -17,7 +17,7 @@ run = 'deno lint'
 
 [tasks.'check:type']
 depends = 'generate:version'
-run = 'deno check src/wk.ts'
+run = 'deno check src/wk.ts scripts/generate-schemas.ts'
 
 [tasks.'generate:version']
 run = 'echo "${VERSION:-unknown}" > VERSION'
@@ -34,6 +34,27 @@ depends = [
 depends = 'bundle'
 run = 'deno compile --allow-all --target {{arg(name="target")}} --output dist/wk-{{arg(name="target")}} dist/wk.bundle.js'
 hide = true
+
+[tasks.'generate:schemas']
+description = 'Generate the distributable JSON Schemas from src/schema.ts'
+run = 'deno run --allow-write=dist scripts/generate-schemas.ts'
+
+[tasks.dist]
+description = 'Package a target into dist/wk-<target>.tar.gz with its schemas and LICENSE'
+depends = 'generate:schemas'
+run = '''
+set -eu
+target='{{arg(name="target")}}'
+mise run build:internal "${target}"
+stage="dist/pkg/wk-${target}"
+rm -rf "${stage}"
+mkdir -p "${stage}"
+cp "dist/wk-${target}" "${stage}/wk"
+cp LICENSE "${stage}/"
+cp -R dist/schemas "${stage}/schemas"
+tar -czf "dist/wk-${target}.tar.gz" -C dist/pkg "wk-${target}"
+rm -rf dist/pkg
+'''
 
 [tasks.bundle]
 depends = 'generate:version'
