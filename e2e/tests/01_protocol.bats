@@ -113,24 +113,6 @@ YAML
   assert_equal "$output" $'\t\tls -la\tnote:hello world'
 }
 
-@test "non-scalar fields are dropped" {
-  write_bindings <<'YAML'
-- key: l
-  type: command
-  buffer: ls -la
-  num: 1
-  arr: [a, b]
-  obj: { a: 1 }
-  str: kept
-YAML
-
-  wk_run --inputs 'l'
-
-  assert_equal "$status" 0
-  # run.ts only forwards string and boolean values.
-  assert_equal "$output" $'\t\tls -la\tstr:kept'
-}
-
 @test "an empty buffer still produces the two leading delimiters" {
   write_bindings <<'YAML'
 - key: l

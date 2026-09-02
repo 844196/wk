@@ -1,7 +1,7 @@
 import { type KeyPressEvent } from '@cliffy/keypress'
 import { PRINTABLE_ASCII } from './const.ts'
 import { AbortError, KeyParseError, UndefinedKeyError } from './errors.ts'
-import { type Binding, type Command } from './types/Binding.ts'
+import { type Binding, type Command } from './schema.ts'
 
 export type Dependencies = {
   keypress: () => AsyncIterable<KeyPressEvent>

@@ -86,20 +86,25 @@ YAML
   wk_run --inputs 'l'
 
   assert_equal "$status" 7
-  assert_equal "$stderr" "${XDG_CONFIG_HOME}/wk/bindings.yaml: invalid format"
+  assert_equal "$stderr" "${XDG_CONFIG_HOME}/wk/bindings.yaml: expected a list of bindings"
 }
 
-@test "a bindings entry without a string key stops wk" {
+@test "a bindings entry without a key stops wk, naming the entry" {
   write_bindings <<'YAML'
+- desc: fine
+  key: a
+  type: command
+  buffer: ls -la
 - desc: no key here
   type: command
   buffer: ls -la
 YAML
 
-  wk_run --inputs 'l'
+  wk_run --inputs 'a'
 
   assert_equal "$status" 7
-  assert_equal "$stderr" "${XDG_CONFIG_HOME}/wk/bindings.yaml: invalid format"
+  assert_equal "$stderr" \
+    "${XDG_CONFIG_HOME}/wk/bindings.yaml: [1].key: expected a key name or a digit 0-9"
 }
 
 @test "a config file holding a scalar stops wk" {
@@ -110,7 +115,7 @@ YAML
   wk_run --inputs 'l'
 
   assert_equal "$status" 7
-  assert_equal "$stderr" "${XDG_CONFIG_HOME}/wk/config.yaml: invalid format"
+  assert_equal "$stderr" "${XDG_CONFIG_HOME}/wk/config.yaml: expected a mapping"
 }
 
 @test "config is read before bindings, so the first broken file wins" {
@@ -124,7 +129,7 @@ YAML
   wk_run --inputs 'l'
 
   assert_equal "$status" 7
-  assert_equal "$stderr" "${XDG_CONFIG_HOME}/wk/config.yaml: invalid format"
+  assert_equal "$stderr" "${XDG_CONFIG_HOME}/wk/config.yaml: expected a mapping"
 }
 
 @test "a directory in place of a config file stops wk" {
@@ -148,7 +153,7 @@ YAML
   wk_run --inputs 'l'
 
   assert_equal "$status" 7
-  assert_equal "$stderr" '~/.config/wk/bindings.yaml: invalid format'
+  assert_equal "$stderr" '~/.config/wk/bindings.yaml: expected a list of bindings'
 }
 
 @test "global and local bindings are concatenated with global first" {

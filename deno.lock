@@ -16,6 +16,7 @@
     "jsr:@std/path@1.0.8": "1.0.8",
     "jsr:@std/text@~1.0.7": "1.0.15",
     "jsr:@std/yaml@1.0.5": "1.0.5",
+    "jsr:@zod/zod@4.5.4": "4.5.4",
     "npm:@types/node@*": "22.13.8",
     "npm:xdg-basedir@5.1.0": "5.1.0"
   },
@@ -84,6 +85,9 @@
     },
     "@std/yaml@1.0.5": {
       "integrity": "71ba3d334305ee2149391931508b2c293a8490f94a337eef3a09cade1a2a2742"
+    },
+    "@zod/zod@4.5.4": {
+      "integrity": "bf0da80e42232d5f9f485d37b5c980e0d88f07fe04b9b1f2bd9012c008404df4"
     }
   },
   "npm": {
@@ -111,6 +115,7 @@
       "jsr:@std/fmt@1.0.3",
       "jsr:@std/path@1.0.8",
       "jsr:@std/yaml@1.0.5",
+      "jsr:@zod/zod@4.5.4",
       "npm:xdg-basedir@5.1.0"
     ]
   }

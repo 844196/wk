@@ -24,6 +24,7 @@
     "@std/fmt": "jsr:@std/fmt@1.0.3",
     "@std/path": "jsr:@std/path@1.0.8",
     "@std/yaml": "jsr:@std/yaml@1.0.5",
+    "@zod/mini": "jsr:@zod/zod@4.5.4/mini",
     "xdg-basedir": "npm:xdg-basedir@5.1.0"
   },
   "unstable": ["raw-imports"]
