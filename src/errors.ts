@@ -27,3 +27,22 @@ export class KeyParseError extends Error {
     return this.#key.key
   }
 }
+
+export class ConfigError extends Error {
+  #path: string
+  #detail: string
+
+  constructor(path: string, detail: string) {
+    super()
+    this.#path = path
+    this.#detail = detail
+  }
+
+  getPath(): string {
+    return this.#path
+  }
+
+  getDetail(): string {
+    return this.#detail
+  }
+}

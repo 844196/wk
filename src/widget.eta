@@ -22,6 +22,7 @@ _wk_widget() {
       # 2: Invalid arguments or options error
       # 5: No match error
       # 6: Key parse error
+      # 7: Config error
       # *: Unknown errors
       zle -M "wk: $res"
       return $wk_exit
