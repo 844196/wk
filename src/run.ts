@@ -7,13 +7,68 @@ import { TUI } from './tui.ts'
 import { defaultContext, mergeContext, PartialContext } from './types/Context.ts'
 import { Dependencies, main } from './main.ts'
 import { getKeySymbol, renderPrompt, renderTable } from './ui.ts'
-import { AbortError, KeyParseError, UndefinedKeyError } from './errors.ts'
+import { AbortError, ConfigError, KeyParseError, UndefinedKeyError } from './errors.ts'
 
-async function loadYaml<T>(path: string, fallback: T) {
-  const text = await Deno.readTextFile(path)
+// `@std/yaml` reports `at line N, column M` on the first line, then an excerpt
+// and a caret. Only the first line fits `zle -M`, and its trailing colon
+// introduces the excerpt that is being dropped.
+//
+// Deno's IO errors append the syscall and the path (`... : readfile '/x'`),
+// which the `<path>: ` prefix already carries.
+function summarize(e: unknown): string {
+  const message = e instanceof Error ? e.message : String(e)
+  return message.split('\n')[0].replace(/: \w+ '.*'$/, '').replace(/:$/, '')
+}
+
+function isPartialContext(given: unknown): given is PartialContext {
+  return typeof given === 'object' && given !== null && !Array.isArray(given)
+}
+
+function isBindings(given: unknown): given is Binding[] {
+  return Array.isArray(given) &&
+    given.every((b) => typeof b === 'object' && b !== null && typeof (b as { key?: unknown }).key === 'string')
+}
+
+// A missing file is the only silent fallback. Anything else — a syntax error, a
+// shape mismatch, EACCES, EISDIR — stops wk, so that a typo cannot quietly
+// change how it behaves.
+async function loadYaml<T>(path: string, fallback: T, isValid: (given: unknown) => given is T): Promise<T> {
+  let text: string
+  try {
+    text = await Deno.readTextFile(path)
+  } catch (e: unknown) {
+    if (e instanceof Deno.errors.NotFound) {
+      return fallback
+    }
+    throw new ConfigError(path, summarize(e))
+  }
+
+  let parsed: unknown
+  try {
+    parsed = parseYaml(text)
+  } catch (e: unknown) {
+    throw new ConfigError(path, summarize(e))
+  }
+
   // An empty document — blank, comments only, `---`, `null`, `~` — parses to
   // null. Treat it exactly like an absent file.
-  return (parseYaml(text) ?? fallback) as T
+  if (parsed === null || parsed === undefined) {
+    return fallback
+  }
+
+  if (!isValid(parsed)) {
+    throw new ConfigError(path, 'invalid format')
+  }
+
+  return parsed
+}
+
+function abbreviateHome(path: string): string {
+  const home = Deno.env.get('HOME')
+  if (home === undefined || home === '') {
+    return path
+  }
+  return path === home ? '~' : path.startsWith(`${home}/`) ? `~${path.slice(home.length)}` : path
 }
 
 function unescapeAnsi(given: string): string {
@@ -32,20 +87,14 @@ export const runCommand = new Command()
 For example, this simulates pressing "g", "p", and "f".`,
   )
   .action(async ({ upOneLine, inputs }) => {
-    const fetchContextWaiting = (async () => {
-      // FIXME: a parse failure is swallowed here, which makes a typo in
-      // config.yaml indistinguishable from having no config.yaml.
-      const found = await loadYaml<PartialContext>(joinPath(WK_CONFIG_HOME, 'config.yaml'), {})
-        .catch(() => ({} as PartialContext))
-      return mergeContext(found)
-    })()
-
-    // FIXME: a parse failure is swallowed here, which makes a typo in
-    // bindings.yaml indistinguishable from having no bindings.
-    const fetchBindingsWaiting = Promise.all([
-      loadYaml<Binding[]>(joinPath(WK_CONFIG_HOME, 'bindings.yaml'), []).catch(() => [] as Binding[]),
-      loadYaml<Binding[]>(joinPath(Deno.cwd(), 'wk.bindings.yaml'), []).catch(() => [] as Binding[]),
-    ]).then(([globalBindings, localBindings]) => globalBindings.concat(localBindings))
+    // Read in a fixed order and one at a time, so that the first broken file is
+    // the one reported and the rest are left untouched.
+    const load = async () => {
+      const ctx = mergeContext(await loadYaml(joinPath(WK_CONFIG_HOME, 'config.yaml'), {}, isPartialContext))
+      const globalBindings = await loadYaml(joinPath(WK_CONFIG_HOME, 'bindings.yaml'), [], isBindings)
+      const localBindings = await loadYaml(joinPath(Deno.cwd(), 'wk.bindings.yaml'), [], isBindings)
+      return [ctx, globalBindings.concat(localBindings)] as const
+    }
 
     const tty = await Deno.open('/dev/tty', { read: true, write: true })
     const tui = new TUI(tty, inputs === undefined ? [] : inputs.split(' ').map(unescapeAnsi))
@@ -53,7 +102,7 @@ For example, this simulates pressing "g", "p", and "f".`,
     try {
       tui.init(upOneLine === true ? true : upOneLine === 'true' ? true : upOneLine === 'false' ? false : 'auto')
 
-      const [ctx, bindings] = await Promise.all([fetchContextWaiting, fetchBindingsWaiting])
+      const [ctx, bindings] = await load()
 
       let timeoutTimerId: number | undefined
       const handleTimeout = () => {
@@ -115,6 +164,10 @@ For example, this simulates pressing "g", "p", and "f".`,
         tui.close()
         console.error('Failed to parse key', e.getKey())
         Deno.exit(6)
+      } else if (e instanceof ConfigError) {
+        tui.close()
+        console.error(`${abbreviateHome(e.getPath())}: ${e.getDetail()}`)
+        Deno.exit(7)
       } else {
         throw e
       }

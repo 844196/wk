@@ -28,8 +28,7 @@ YAML
   assert_equal "$output" $'\t\tls -la'
 }
 
-@test "a malformed bindings file is silently treated as empty" {
-  # Records the current behaviour; see the FIXME in run.ts.
+@test "a malformed bindings file stops wk" {
   write_bindings <<'YAML'
 - key: l
    type: command
@@ -38,12 +37,13 @@ YAML
 
   wk_run --inputs 'l'
 
-  assert_equal "$status" 5
-  assert_equal "$stderr" '"l" is undefined'
+  assert_equal "$status" 7
+  # The wording comes from the YAML parser, so only the shape wk adds is pinned.
+  assert_stderr_contains "${XDG_CONFIG_HOME}/wk/bindings.yaml: "
+  assert_stderr_contains 'at line 2, column 8'
 }
 
-@test "a malformed config file falls back to the defaults" {
-  # Records the current behaviour; see the FIXME in run.ts.
+@test "a malformed config file stops wk" {
   write_config <<'YAML'
 outputDelimiter: ',
 YAML
@@ -55,8 +55,100 @@ YAML
 
   wk_run --inputs 'l'
 
-  assert_equal "$status" 0
-  assert_equal "$output" $'\t\tls -la'
+  assert_equal "$status" 7
+  assert_stderr_contains "${XDG_CONFIG_HOME}/wk/config.yaml: "
+  assert_stderr_contains 'at line 2, column 1'
+}
+
+@test "a malformed local bindings file stops wk" {
+  write_bindings <<'YAML'
+- key: l
+  type: command
+  buffer: ls -la
+YAML
+  write_local_bindings <<'YAML'
+- key: x
+   type: command
+YAML
+
+  # The local layer is not treated any more leniently than the global one.
+  wk_run --inputs 'l'
+
+  assert_equal "$status" 7
+  assert_stderr_contains "${PWD}/wk.bindings.yaml: "
+}
+
+@test "a bindings file holding a mapping stops wk" {
+  write_bindings <<'YAML'
+foo: bar
+YAML
+
+  wk_run --inputs 'l'
+
+  assert_equal "$status" 7
+  assert_equal "$stderr" "${XDG_CONFIG_HOME}/wk/bindings.yaml: invalid format"
+}
+
+@test "a bindings entry without a string key stops wk" {
+  write_bindings <<'YAML'
+- desc: no key here
+  type: command
+  buffer: ls -la
+YAML
+
+  wk_run --inputs 'l'
+
+  assert_equal "$status" 7
+  assert_equal "$stderr" "${XDG_CONFIG_HOME}/wk/bindings.yaml: invalid format"
+}
+
+@test "a config file holding a scalar stops wk" {
+  write_config <<'YAML'
+42
+YAML
+
+  wk_run --inputs 'l'
+
+  assert_equal "$status" 7
+  assert_equal "$stderr" "${XDG_CONFIG_HOME}/wk/config.yaml: invalid format"
+}
+
+@test "config is read before bindings, so the first broken file wins" {
+  write_config <<'YAML'
+42
+YAML
+  write_bindings <<'YAML'
+foo: bar
+YAML
+
+  wk_run --inputs 'l'
+
+  assert_equal "$status" 7
+  assert_equal "$stderr" "${XDG_CONFIG_HOME}/wk/config.yaml: invalid format"
+}
+
+@test "a directory in place of a config file stops wk" {
+  mkdir -p "${XDG_CONFIG_HOME}/wk/config.yaml"
+
+  wk_run --inputs 'l'
+
+  assert_equal "$status" 7
+  # The reason is the operating system's own wording.
+  assert_stderr_contains "${XDG_CONFIG_HOME}/wk/config.yaml: "
+  assert_stderr_contains 'directory'
+}
+
+@test "a path under HOME is reported with a tilde" {
+  mkdir -p "${HOME}/.config/wk"
+  cat >"${HOME}/.config/wk/bindings.yaml" <<'YAML'
+foo: bar
+YAML
+  unset XDG_CONFIG_HOME
+
+  wk_run --inputs 'l'
+
+  assert_equal "$status" 7
+  assert_equal "$stderr" '~/.config/wk/bindings.yaml: invalid format'
 }
 
 @test "global and local bindings are concatenated with global first" {
