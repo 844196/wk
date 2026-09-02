@@ -7,7 +7,7 @@ zsh向けのwhich-keyライクメニュー。Deno製CLI (`src/wk.ts`) と、そ�
 `wk run` はTUIを `/dev/tty` に描き、選ばれた結果だけを標準出力に出す。それを `_wk_widget` が読んで `BUFFER` へ差し込む。この受け渡しは `src/run.ts` と `src/widget.eta` の間の契約で、片方だけ変えると壊れる。
 
 - 出力形式: 先頭1文字が区切り文字、以降はその区切り文字で連結された `buffer` + `key:value` 列 (`eval:true`, `accept:true` など)。区切り文字はbindingの `delimiter`、無ければconfigの `outputDelimiter`。
-- 終了コード: 0成功/3中断/4タイムアウト/5未定義キー/6キーパース失敗。`widget.eta` の `case` がこれで分岐し、それ以外は `zle -M` でエラー表示に回る。
+- 終了コード: 0成功/3中断/4タイムアウト/5未定義キー/6キーパース失敗/7設定ファイル不正。`widget.eta` の `case` がこれで分岐し、それ以外は `zle -M` でエラー表示に回る。
 - エラー種別を増やすときは `src/errors.ts`・`run.ts` のcatch・`widget.eta` のcaseをセットで触る。
 
 ## binding/config のスキーマは 3 箇所にある
