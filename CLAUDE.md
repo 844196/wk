@@ -10,17 +10,19 @@ zsh向けのwhich-keyライクメニュー。Deno製CLI (`src/wk.ts`) と、そ�
 - 終了コード: 0成功/3中断/4タイムアウト/5未定義キー/6キーパース失敗/7設定ファイル不正。`widget.eta` の `case` がこれで分岐し、それ以外は `zle -M` でエラー表示に回る。
 - エラー種別を増やすときは `src/errors.ts`・`run.ts` のcatch・`widget.eta` のcaseをセットで触る。
 
-## binding/config のスキーマは 3 箇所にある
+## スキーマは `src/schema.ts` が SSoT
 
-`key`/`desc`/`buffer` などのフィールドを増減させたら、次の3箇所を揃える。
+`key`/`desc`/`buffer` などのフィールドを増減させたら、触るのは `src/schema.ts` と `README.md` の設定例だけ。
 
-- `src/types/Binding.ts`, `src/types/Context.ts` (型と既定値)
-- `schemas/bindings.json`, `schemas/config.json` (ユーザー向けJSON Schema)
-- `README.md` の設定例
+- `src/schema.ts` — `@zod/mini` のスキーマ。型 (`Binding`/`Command`/`Context`/`Color`) は `z.infer` で導出、既定値は `z._default`/`z.prefault` が持ち、`defaultContext` は `ContextSchema.parse({})`。手書きの型定義は無い。
+- 配布用JSON Schemaはコミットしていない。`mise run generate:schemas` が `dist/schemas/` に吐き、`mise run dist <target>` がリリースtarball (`wk-<target>/{wk,LICENSE,schemas/}`) に詰める。生成は `io: 'input'` — ユーザーが書ける形を出す。
+- `@zod/mini` はロケールを積まないので、`error` を渡し忘れた検査は `Invalid input` になる。フィールドを足したら必ず `expected(...)` を渡し、既存の入力を一通り流して `Invalid input` が出ないことを見る。
+- 設定エラーは `<ファイル>: <パス>: <期待>` の1行で exit 7。パスはzodのissueの `path` から `[0].bindings[0].key` の形に組む。
+- `key` は文字列だが、YAMLがクォート無しの数字を数値にするため `0`〜`9` の整数も受けて `String()` で正規化する。クォートが要るのはYAMLのインジケータ文字だけ (nullになるか構文エラー) で、`.` のような大半の記号はそのまま通る。
 
 ## 検証
 
-静的チェックは `mise run check` にまとまっている。`VERSION` はgitignoreされた生成物で `wk.ts` がraw-importしているため、素の `deno check src/wk.ts` は `TS2307` で落ちる。型チェックは `mise run check:type` 経由で走らせる。依存の挙動を単発スクリプトで確かめるときは `deno run --config deno.jsonc <file>` — import map がここにあるので、渡さないと `@cliffy/*` が解決できずに落ちる。`src/main.ts` はキー入力ループを `Dependencies` で注入する形になっているが、まだ差し替え先が存在しない。
+静的チェックは `mise run check` にまとまっている。`VERSION` はgitignoreされた生成物で `wk.ts` がraw-importしているため、素の `deno check src/wk.ts` は `TS2307` で落ちる。型チェックは `mise run check:type` 経由で走らせる。依存の挙動を単発スクリプトで確かめるときは `deno run --config deno.jsonc <file>` — import map がここにあるので、渡さないと `@cliffy/*` や `@zod/mini` が解決できずに落ちる。`deno.jsonc` は `lock.frozen` なので、依存を足したら `deno install --frozen=false`。`src/main.ts` はキー入力ループを `Dependencies` で注入する形になっているが、まだ差し替え先が存在しない。
 
 e2eテストが `e2e/` にある。`mise run e2e` でバイナリをビルドしてから走らせ、`mise run e2e:only` は `dist/` の既存バイナリをそのまま使う (パスを渡せば1ファイルだけ — `mise run e2e:only e2e/tests/06_widget.bats`)。`exec format error` は `WK_E2E_TARGET` とバイナリのアーキ不一致。Docker (zsh/tmux/bats-core、Denoは入れない) の中でbats-coreを回し、対象バイナリは `WK_BIN` で受け取る黒箱テスト。将来Denoをやめても受け入れ仕様として使い回せるよう、テスト側からDenoを参照しないこと。層は3つ — `script(1)` でptyを張ってCLIを直叩き (`helpers/common.bash` の `wk_run`)、TTY不要の `wk init`、tmuxで実zshウィジェットを動かす (`helpers/tmux.bash`)。ユニットテストは無い。
 
