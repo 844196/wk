@@ -66,6 +66,41 @@ function unescapeAnsi(given: string): string {
   return given.replace(/\\x([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
 }
 
+// `main.ts`'s `find` always resolves a duplicated key to its first match, so
+// keeping the first occurrence here (rather than e.g. the last) is what
+// keeps a merge or a sort from disagreeing with that.
+function firstByKey(bindings: Binding[]): Map<string, Binding> {
+  const byKey = new Map<string, Binding>()
+  for (const binding of bindings) {
+    if (!byKey.has(binding.key)) byKey.set(binding.key, binding)
+  }
+  return byKey
+}
+
+// Local bindings shadow global ones sharing the same key, whole-entry — a
+// group and a command never partially merge, and a group's own nested
+// `bindings` never cross the boundary either. `local` goes first so
+// `firstByKey` keeps its entry over global's for a shared key.
+function mergeBindings(global: Binding[], local: Binding[]): Binding[] {
+  return [...firstByKey([...local, ...global]).values()]
+}
+
+// A fixed locale rather than the ambient one, so key order doesn't shift
+// with the user's `LANG`. `numeric` compares a digit run by value (f2
+// before f10 — ICU chunks past 254 significant digits, well past any real
+// key name), and `caseFirst: 'upper'` keeps `G` before `g`.
+const keyCollator = new Intl.Collator('en', { numeric: true, caseFirst: 'upper' })
+
+// Applied at every nesting level, not just the merged top level. Two
+// distinct keys can collate as equal (e.g. `f2` and `f02` under `numeric`),
+// and `toSorted` is stable, so an exact-string tie-break keeps their order
+// from depending on where each one came from.
+function sortBindings(bindings: Binding[]): Binding[] {
+  return [...firstByKey(bindings).values()]
+    .toSorted((a, b) => keyCollator.compare(a.key, b.key) || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+    .map((binding) => binding.type === 'bindings' ? { ...binding, bindings: sortBindings(binding.bindings) } : binding)
+}
+
 export const runCommand = new Command()
   .description('Run.')
   .type('boolOrAuto', new EnumType(['true', 'false', 'auto']))
@@ -90,7 +125,7 @@ For example, this simulates pressing "g", "p", and "f".`,
       const empty: Binding[] = []
       const globalBindings = await loadYaml(joinPath(WK_CONFIG_HOME, 'bindings.yaml'), empty, parseBindings)
       const localBindings = await loadYaml(joinPath(Deno.cwd(), 'wk.bindings.yaml'), empty, parseBindings)
-      return [ctx, globalBindings.concat(localBindings)] as const
+      return [ctx, sortBindings(mergeBindings(globalBindings, localBindings))] as const
     }
 
     const tty = await Deno.open('/dev/tty', { read: true, write: true })
