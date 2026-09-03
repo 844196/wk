@@ -77,6 +77,20 @@ YAML
   assert_line --index 1 ' ⏎ ➜ Enter'
 }
 
+@test "a built-in function key symbol resolves for a lowercase key" {
+  write_bindings <<'YAML'
+- key: f1
+  type: command
+  desc: Help
+  buffer: man wk
+YAML
+  start_wk_session
+  wait_for_screen 'Help'
+
+  run capture_screen
+  assert_line --index 1 ' 󱊫 ➜ Help'
+}
+
 @test "symbols.keys can be overridden from config" {
   write_config <<'YAML'
 symbols:
