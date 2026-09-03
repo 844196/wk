@@ -156,11 +156,14 @@ YAML
   assert_equal "$stderr" '~/.config/wk/bindings.yaml: expected a list of bindings'
 }
 
-@test "global and local bindings are concatenated with global first" {
+@test "local bindings override global ones with the same key" {
   write_bindings <<'YAML'
 - key: l
   type: command
   buffer: from-global
+- key: g
+  type: command
+  buffer: global-only
 YAML
   write_local_bindings <<'YAML'
 - key: l
@@ -171,14 +174,50 @@ YAML
   buffer: local-only
 YAML
 
-  # Both files contribute, and the global definition of a shared key wins.
+  # A shared key resolves to the local definition...
   wk_run --inputs 'l'
   assert_equal "$status" 0
-  assert_equal "$output" $'\t\tfrom-global'
+  assert_equal "$output" $'\t\tfrom-local'
 
+  # ...but an untouched global key still contributes...
+  wk_run --inputs 'g'
+  assert_equal "$status" 0
+  assert_equal "$output" $'\t\tglobal-only'
+
+  # ...alongside a local-only one.
   wk_run --inputs 'x'
   assert_equal "$status" 0
   assert_equal "$output" $'\t\tlocal-only'
+}
+
+@test "a local group replaces a global group of the same key entirely" {
+  write_bindings <<'YAML'
+- key: g
+  type: bindings
+  desc: Git (global)
+  bindings:
+    - key: p
+      type: command
+      buffer: git push
+YAML
+  write_local_bindings <<'YAML'
+- key: g
+  type: bindings
+  desc: Git (local)
+  bindings:
+    - key: c
+      type: command
+      buffer: git commit
+YAML
+
+  # The whole group is swapped, not merged: the global group's own
+  # sub-binding is gone rather than sitting alongside the local one.
+  wk_run --inputs 'g p'
+  assert_equal "$status" 5
+
+  wk_run --inputs 'g c'
+  assert_equal "$status" 0
+  assert_equal "$output" $'\t\tgit commit'
 }
 
 @test "local bindings alone are enough" {

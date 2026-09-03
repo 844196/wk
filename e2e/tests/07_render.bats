@@ -13,7 +13,149 @@ teardown() {
   stop_zsh_session
 }
 
-@test "each row is the key, the separator and the description, in binding order" {
+@test "rows are ordered by key regardless of declaration order or global/local origin" {
+  write_bindings <<'YAML'
+- key: l
+  type: command
+  desc: List
+  buffer: ls -la
+- key: g
+  type: bindings
+  desc: Git
+  bindings:
+    - key: p
+      type: command
+      desc: Push
+      buffer: git push
+YAML
+  write_local_bindings <<'YAML'
+- key: i
+  type: command
+  desc: Info
+  buffer: info
+YAML
+  start_wk_session
+  wait_for_screen 'List'
+
+  run capture_screen
+  # Declared l-then-g, and i comes from a separate (local) source, but
+  # sorting interleaves all three by key: g, i, l.
+  assert_line --index 1 ' g ➜ +Git'
+  assert_line --index 2 ' i ➜ Info'
+  assert_line --index 3 ' l ➜ List'
+}
+
+@test "a duplicated key renders as a single row" {
+  write_bindings <<'YAML'
+- key: l
+  type: command
+  desc: First
+  buffer: first
+- key: l
+  type: command
+  desc: Second
+  buffer: second
+YAML
+  start_wk_session
+  wait_for_screen 'First'
+
+  run capture_screen
+  # The row a keypress can never reach (main.ts's `find` always resolves to
+  # the first definition) is dropped before rendering, not just shown twice.
+  assert_line --index 1 ' l ➜ First'
+  refute_line --partial 'Second'
+}
+
+@test "a duplicated key inside a nested group renders as a single row" {
+  write_bindings <<'YAML'
+- key: g
+  type: bindings
+  desc: Git
+  bindings:
+    - key: p
+      type: command
+      desc: First
+      buffer: first
+    - key: p
+      type: command
+      desc: Second
+      buffer: second
+YAML
+  start_wk_session --inputs 'g'
+  wait_for_screen 'First'
+
+  run capture_screen
+  # Deduping isn't only a top-level, pre-merge concern: it applies at every
+  # nesting level, same as sorting.
+  assert_line --index 1 ' p ➜ First'
+  refute_line --partial 'Second'
+}
+
+@test "keys that collate as equal still sort deterministically" {
+  write_bindings <<'YAML'
+- key: "1"
+  type: command
+  desc: One
+  buffer: one
+- key: "01"
+  type: command
+  desc: ZeroOne
+  buffer: zero-one
+YAML
+  start_wk_session
+  wait_for_screen 'One'
+
+  run capture_screen
+  # `numeric` collation treats "01" and "1" as the same value; an exact
+  # string tie-break is what keeps their order from being merge-order noise.
+  assert_line --index 1 ' 01 ➜ ZeroOne'
+  assert_line --index 2 ' 1  ➜ One'
+}
+
+@test "keys sort naturally, not lexicographically" {
+  write_bindings <<'YAML'
+- key: f10
+  type: command
+  desc: Ten
+  buffer: ten
+- key: f2
+  type: command
+  desc: Two
+  buffer: two
+- key: f1
+  type: command
+  desc: One
+  buffer: one
+YAML
+  start_wk_session
+  wait_for_screen 'Ten'
+
+  run capture_screen
+  assert_line --index 1 " 󱊫 ➜ One"
+  assert_line --index 2 " 󱊬 ➜ Two"
+  assert_line --index 3 " 󱊴 ➜ Ten"
+}
+
+@test "an uppercase key sorts before its lowercase counterpart" {
+  write_bindings <<'YAML'
+- key: g
+  type: command
+  desc: Lower
+  buffer: lower
+- key: G
+  type: command
+  desc: Upper
+  buffer: upper
+YAML
+  start_wk_session
+  wait_for_screen 'Upper'
+
+  run capture_screen
+  assert_line --index 1 ' G ➜ Upper'
+  assert_line --index 2 ' g ➜ Lower'
+}
+
+@test "sorting is applied recursively to nested groups" {
   write_bindings <<'YAML'
 - key: g
   type: bindings
@@ -23,18 +165,18 @@ teardown() {
       type: command
       desc: Push
       buffer: git push
-- key: l
-  type: command
-  desc: List
-  buffer: ls -la
+    - key: c
+      type: command
+      desc: Commit
+      buffer: git commit
 YAML
-  start_wk_session
-  wait_for_screen 'List'
+  start_wk_session --inputs 'g'
+  wait_for_screen 'Commit'
 
   run capture_screen
-  # A group is marked with symbols.group in front of its description.
-  assert_line --index 1 ' g ➜ +Git'
-  assert_line --index 2 ' l ➜ List'
+  # Declared p-then-c, but c sorts first inside the group too.
+  assert_line --index 1 ' c ➜ Commit'
+  assert_line --index 2 ' p ➜ Push'
 }
 
 @test "a command without a description falls back to its buffer" {
