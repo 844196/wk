@@ -12,7 +12,7 @@ export type Dependencies = {
 
 export async function main(deps: Dependencies, bindings: Binding[]): Promise<Command> {
   const inputKeys: string[] = []
-  const navigation: [Binding[], ...(Binding[])[]] = [bindings]
+  const navigation: [Binding[], ...Binding[][]] = [bindings]
 
   deps.draw(inputKeys, bindings)
   deps.setTimeoutTimer()
@@ -24,7 +24,7 @@ export async function main(deps: Dependencies, bindings: Binding[]): Promise<Com
       throw new KeyParseError(key)
     }
 
-    if ((key.ctrlKey && key.key === 'c') || (key.ctrlKey && key.key === 'd') || (key.key === 'escape')) {
+    if ((key.ctrlKey && key.key === 'c') || (key.ctrlKey && key.key === 'd') || key.key === 'escape') {
       throw new AbortError()
     }
 

@@ -1,5 +1,6 @@
 [tools]
 deno = '2.5.2'
+biome = '2.5.15'
 lefthook = "2.0.15"
 "github:convco/convco" = "0.6.2"
 
@@ -10,7 +11,7 @@ postinstall = "lefthook install"
 depends = ['check:format', 'check:lint', 'check:type']
 
 [tasks.'check:format']
-run = 'deno fmt --check'
+run = 'biome format'
 
 [tasks.'check:lint']
 run = 'deno lint'
