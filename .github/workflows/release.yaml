@@ -69,7 +69,13 @@ jobs:
         uses: ./.github/actions/setup-project
 
       - name: Generate release notes
-        run: convco changelog ${{ github.ref_name }} --max-versions 1 -o release-notes.md
+        # GitHub shows every newline in release notes as a line break, and convco keeps the newlines of
+        # a wrapped BREAKING CHANGE footer. Its templates have no helper to replace them, so join each
+        # list item's continuation lines here.
+        run: >-
+          convco changelog ${{ github.ref_name }} --max-versions 1
+          | awk '/^\* /{if(b!="")print b;b=$0;next} b!=""&&NF&&!/^#/{b=b" "$0;next} {if(b!=""){print b;b=""};print} END{if(b!="")print b}'
+          > release-notes.md
 
       - name: Upload release notes
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
