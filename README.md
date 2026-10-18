@@ -11,17 +11,9 @@
 
    <https://github.com/844196/wk/releases/latest>
 
-   ```shell
-   tar xzf wk-x86_64-unknown-linux-gnu.tar.gz
-   ```
-
    It holds the `wk` binary, the JSON Schemas for the configuration files, and the license.
 
-2. Put the binary into your `$PATH`:
-
-   ```shell
-   install -m 755 wk-x86_64-unknown-linux-gnu/wk ~/.local/bin/
-   ```
+2. Put the `wk` binary into your `$PATH`.
 
 3. Activate in `$ZDOTDIR/.zshrc`:
 
@@ -54,7 +46,7 @@ Each file has two sections, `config:` and `bindings:`, and either may be left ou
 the top level is an error.
 
 ```yaml
-# yaml-language-server: $schema=/path/to/wk-x86_64-unknown-linux-gnu/schemas/config.json
+# yaml-language-server: $schema=/path/to/schemas/config.json
 config:
   timeout: 60000
   symbols:

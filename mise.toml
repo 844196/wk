@@ -20,55 +20,34 @@ run = 'biome lint --error-on-warnings'
 run = 'bun run tsc'
 
 [tasks.build]
-depends = [
-  'build:internal x86_64-unknown-linux-gnu',
-  'build:internal aarch64-unknown-linux-gnu',
-  'build:internal x86_64-apple-darwin',
-  'build:internal aarch64-apple-darwin',
-]
-
-[tasks.'build:internal']
+description = 'Compile wk for a Bun target (e.g. bun-linux-x64) into dist/wk'
+usage = 'arg "<target>"'
 run = '''
-set -eu
-target='{{arg(name="target")}}'
-case "${target}" in
-  x86_64-unknown-linux-gnu) bun_target=bun-linux-x64 ;;
-  aarch64-unknown-linux-gnu) bun_target=bun-linux-arm64 ;;
-  x86_64-apple-darwin) bun_target=bun-darwin-x64 ;;
-  aarch64-apple-darwin) bun_target=bun-darwin-arm64 ;;
-  *) echo "unknown target: ${target}" >&2; exit 1 ;;
-esac
-bun build --compile --minify --target="${bun_target}" \
+bun build --compile --minify --target="${usage_target:?}" \
   --define WK_VERSION="\"${VERSION:-unknown}\"" \
-  --outfile "dist/wk-${target}" src/wk.ts
+  --outfile dist/wk src/wk.ts
 '''
-hide = true
 
 [tasks.'generate:schemas']
 description = 'Generate the distributable JSON Schemas from src/schema.ts'
 run = 'bun scripts/generate-schemas.ts'
 
 [tasks.dist]
-description = 'Package a target into dist/wk-<target>.tar.gz with its schemas and LICENSE'
+description = 'Package dist/wk with its schemas and LICENSE into dist/<name>.tar.gz'
+usage = 'arg "<name>"'
 depends = 'generate:schemas'
-run = '''
-set -eu
-target='{{arg(name="target")}}'
-mise run build:internal "${target}"
-stage="dist/pkg/wk-${target}"
-rm -rf "${stage}"
-mkdir -p "${stage}"
-cp "dist/wk-${target}" "${stage}/wk"
-cp LICENSE "${stage}/"
-cp -R dist/schemas "${stage}/schemas"
-tar -czf "dist/wk-${target}.tar.gz" -C dist/pkg "wk-${target}"
-rm -rf dist/pkg
-'''
+run = [
+  'mkdir -p "dist/${usage_name:?}"',
+  'cp dist/wk LICENSE "dist/${usage_name:?}/"',
+  'cp -R dist/schemas "dist/${usage_name:?}/"',
+  'tar -czf "dist/${usage_name:?}.tar.gz" -C dist "${usage_name:?}"',
+  'rm -r "dist/${usage_name:?}"',
+]
 
 [tasks.e2e]
 description = 'Build the binary for WK_E2E_TARGET and run the e2e suite'
 run = [
-  'mise run build:internal "${WK_E2E_TARGET:-x86_64-unknown-linux-gnu}"',
+  'mise run build "${WK_E2E_TARGET:-bun-linux-x64}"',
   './e2e/run.sh',
 ]
 

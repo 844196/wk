@@ -20,7 +20,7 @@ description: Run wk against a throwaway config and see what it actually does. Us
 driver はコンパイル済みバイナリだけを叩く。暗黙にビルドはしない。**ソースを変えたなら、変えたか怪しいときも、先に走らせる。**
 
 ```bash
-./.claude/skills/run-wk/driver.sh build   # → dist/wk-x86_64-unknown-linux-gnu, 1 秒未満
+./.claude/skills/run-wk/driver.sh build   # → dist/wk, 1 秒未満
 ```
 
 `bun` は `mise install` で入るが、`tmux` / `zsh` / `script(1)` はホスト依存なので `screen` と `widget` の前に `command -v tmux zsh script pgrep`。

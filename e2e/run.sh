@@ -6,15 +6,15 @@ set -euo pipefail
 
 here="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
 root="$(cd "${here}/.." && pwd)"
-target="${WK_E2E_TARGET:-x86_64-unknown-linux-gnu}"
-binary="dist/wk-${target}"
+target="${WK_E2E_TARGET:-bun-linux-x64}"
+binary="dist/wk"
 
 # The image has to match the binary's architecture. Without this, an arm64 host
 # silently pairs an arm64 image with an x86_64 binary and every test dies with
 # "exec format error".
 case "$target" in
-  x86_64-*-linux-*) platform='linux/amd64' ;;
-  aarch64-*-linux-*) platform='linux/arm64' ;;
+  bun-linux-x64*) platform='linux/amd64' ;;
+  bun-linux-arm64*) platform='linux/arm64' ;;
   *)
     echo "e2e can only run linux targets, got: ${target}" >&2
     exit 1
@@ -22,7 +22,7 @@ case "$target" in
 esac
 
 if [[ ! -x "${root}/${binary}" ]]; then
-  echo "${binary} not found. Run: mise run build:internal ${target}" >&2
+  echo "${binary} not found. Run: mise run build ${target}" >&2
   exit 1
 fi
 
@@ -88,6 +88,6 @@ docker build --quiet --platform "$platform" --tag wk-e2e "${here}" >/dev/null
 exec docker run --init --rm --platform "$platform" \
   --volume "${root}/dist:/dist:ro" \
   --volume "${here}:/e2e:ro" \
-  --env "WK_BIN=/dist/wk-${target}" \
+  --env "WK_BIN=/dist/wk" \
   wk-e2e \
   bats "${bats_targets[@]}"
