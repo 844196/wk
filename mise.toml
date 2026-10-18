@@ -14,7 +14,7 @@ depends = ['check:format', 'check:lint', 'check:type']
 run = 'biome format'
 
 [tasks.'check:lint']
-run = 'deno lint'
+run = 'biome lint --error-on-warnings'
 
 [tasks.'check:type']
 depends = 'generate:version'

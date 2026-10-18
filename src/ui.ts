@@ -1,6 +1,6 @@
 import { bold, dim, hidden, inverse, italic, rgb24, rgb8, strikethrough, underline } from '@std/fmt/colors'
 import { border as defaultBorder, Table } from '@cliffy/table'
-import { type Binding, type Color, type Context } from './schema.ts'
+import type { Binding, Color, Context } from './schema.ts'
 
 function color(text: string, givenColor: Color) {
   const ansi256 = typeof givenColor === 'number' || typeof givenColor === 'string' ? givenColor : givenColor.color

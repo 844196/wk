@@ -4,7 +4,7 @@ import { parse as parseYaml } from '@std/yaml'
 import { WK_CONFIG_HOME } from './const.ts'
 import { TUI } from './tui.ts'
 import type { Binding, ContextInput, ParseResult } from './schema.ts'
-import { Dependencies, main } from './main.ts'
+import { type Dependencies, main } from './main.ts'
 import { getKeySymbol, renderPrompt, renderTable } from './ui.ts'
 import { AbortError, ConfigError, KeyParseError, UndefinedKeyError } from './errors.ts'
 
