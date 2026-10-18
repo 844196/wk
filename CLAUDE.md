@@ -15,7 +15,7 @@ zsh向けのwhich-keyライクメニュー。Deno製CLI (`src/wk.ts`) と、そ�
 `key`/`desc`/`buffer` などのフィールドを増減させたら、触るのは `src/schema.ts` と `README.md` の設定例だけ。
 
 - `src/schema.ts` — `@zod/mini` のスキーマ。型 (`Binding`/`Command`/`Context`/`Color`) は `z.infer` で導出、既定値は `z._default`/`z.prefault` が持ち、`defaultContext` は `ContextSchema.parse({})`。手書きの型定義は無い。
-- 設定ファイルはglobalの `$XDG_CONFIG_HOME/wk/config.ya?ml` とlocalの `$PWD/wk.ya?ml` の2つで、どちらも `FileSchema` (`config:` + `bindings:`、トップレベルはstrict) の同じ形。`.yaml` があれば `.yml` は読まない。localの `config:` は `run.ts` の `mergeContext` でフィールド単位に重ね、既定値はマージの後で `ContextSchema` が埋める — 各ファイルの段階で埋めるとlocalの既定値がglobalの値を消す。
+- 設定ファイルはglobalの `$XDG_CONFIG_HOME/wk/config.ya?ml` とlocalの `$PWD/wk.ya?ml` の2つで、どちらも `FileSchema` (`config:` + `bindings:`、トップレベルはstrict) の同じ形。`.yaml` があれば `.yml` は読まない。localの `config:` は `run.ts` の `mergeContext` でフィールド単位に重ね、既定値はマージの後で `resolveContext` が埋める — 各ファイルの段階で埋めるとlocalの既定値がglobalの値を消す。
 - 配布用JSON Schemaはコミットしていない。`mise run generate:schemas` が両ファイル共通の `dist/schemas/config.json` を吐き、`mise run dist <target>` がリリースtarball (`wk-<target>/{wk,LICENSE,schemas/}`) に詰める。生成は `io: 'input'` — ユーザーが書ける形を出す。
 - `@zod/mini` はロケールを積まないので、`error` を渡し忘れた検査は `Invalid input` になる。フィールドを足したら必ず `expected(...)` を渡し、既存の入力を一通り流して `Invalid input` が出ないことを見る。
 - 設定エラーは `<ファイル>: <パス>: <期待>` の1行で exit 7。パスはzodのissueの `path` から `bindings[0].bindings[0].key` / `config.colors.prompt` の形に組む。
