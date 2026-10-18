@@ -1,8 +1,9 @@
+import { readFile } from 'node:fs/promises'
+import { join as joinPath } from 'node:path'
 import { Command, EnumType } from '@cliffy/command'
-import { join as joinPath } from '@std/path'
 import { parse as parseYaml } from '@std/yaml'
 import { WK_CONFIG_HOME } from './const.ts'
-import { TUI } from './tui.ts'
+import { openTty, TUI } from './tui.ts'
 import type { Binding, ContextInput, ParseResult } from './schema.ts'
 import { type Dependencies, main } from './main.ts'
 import { getKeySymbol, renderPrompt, renderTable } from './ui.ts'
@@ -12,13 +13,15 @@ import { AbortError, ConfigError, KeyParseError, UndefinedKeyError } from './err
 // and a caret. Only the first line fits `zle -M`, and its trailing colon
 // introduces the excerpt that is being dropped.
 //
-// Deno's IO errors append the syscall and the path (`... : readfile '/x'`),
-// which the `<path>: ` prefix already carries.
+// Node's IO errors put the errno code in front and may append the syscall
+// and the path (`EACCES: permission denied, open '/x'`). The code is for
+// programs, and the path is what the `<path>: ` prefix already carries.
 function summarize(e: unknown): string {
   const message = e instanceof Error ? e.message : String(e)
   return message
     .split('\n')[0]
-    .replace(/: \w+ '.*'$/, '')
+    .replace(/^E[A-Z]+: /, '')
+    .replace(/, \w+ '.*'$/, '')
     .replace(/:$/, '')
 }
 
@@ -41,10 +44,10 @@ async function loadYaml<T>(
   for (const extension of ['yaml', 'yml']) {
     path = `${base}.${extension}`
     try {
-      text = await Deno.readTextFile(path)
+      text = await readFile(path, 'utf8')
       break
     } catch (e: unknown) {
-      if (!(e instanceof Deno.errors.NotFound)) {
+      if ((e as NodeJS.ErrnoException).code !== 'ENOENT') {
         throw new ConfigError(path, summarize(e))
       }
     }
@@ -75,7 +78,7 @@ async function loadYaml<T>(
 }
 
 function abbreviateHome(path: string): string {
-  const home = Deno.env.get('HOME')
+  const home = process.env.HOME
   if (home === undefined || home === '') {
     return path
   }
@@ -162,7 +165,7 @@ For example, this simulates pressing "g", "p", and "f".`,
 
     const load = async () => {
       const global = await loadYaml(joinPath(WK_CONFIG_HOME, 'config'), {}, parseFile)
-      const local = await loadYaml(joinPath(Deno.cwd(), 'wk'), {}, parseFile)
+      const local = await loadYaml(joinPath(process.cwd(), 'wk'), {}, parseFile)
       // The defaults are filled in after the merge, so that a default never
       // stands in for a value the global file set.
       const ctx = resolveContext(mergeContext(global.value.config ?? {}, local.value.config ?? {}))
@@ -176,7 +179,7 @@ For example, this simulates pressing "g", "p", and "f".`,
       return [ctx.value, bindings] as const
     }
 
-    const tty = await Deno.open('/dev/tty', { read: true, write: true })
+    const tty = openTty()
     const tui = new TUI(tty, inputs === undefined ? [] : inputs.split(' ').map(unescapeAnsi))
 
     try {
@@ -184,10 +187,10 @@ For example, this simulates pressing "g", "p", and "f".`,
 
       const [ctx, bindings] = await load()
 
-      let timeoutTimerId: number | undefined
+      let timeoutTimerId: ReturnType<typeof setTimeout> | undefined
       const handleTimeout = () => {
         tui.close()
-        Deno.exit(4)
+        process.exit(4)
       }
 
       const deps: Dependencies = {
@@ -228,7 +231,7 @@ For example, this simulates pressing "g", "p", and "f".`,
     } catch (e: unknown) {
       if (e instanceof AbortError) {
         tui.close()
-        Deno.exit(3)
+        process.exit(3)
       } else if (e instanceof UndefinedKeyError) {
         tui.close()
         console.error(
@@ -237,15 +240,15 @@ For example, this simulates pressing "g", "p", and "f".`,
             .map((k) => getKeySymbol(defaultContext, k))
             .join(' ')}" is undefined`,
         )
-        Deno.exit(5)
+        process.exit(5)
       } else if (e instanceof KeyParseError) {
         tui.close()
         console.error('Failed to parse key', e.getKey())
-        Deno.exit(6)
+        process.exit(6)
       } else if (e instanceof ConfigError) {
         tui.close()
         console.error(`${abbreviateHome(e.getPath())}: ${e.getDetail()}`)
-        Deno.exit(7)
+        process.exit(7)
       } else {
         throw e
       }

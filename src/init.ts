@@ -1,5 +1,5 @@
 import WIDGET_TEMPLATE from './widget.eta' with { type: 'text' }
-import { Eta } from '@eta-dev/eta'
+import { Eta } from 'eta'
 import { Command } from '@cliffy/command'
 
 function shellQuote(key: string) {
@@ -25,7 +25,7 @@ The major-prefix "m" is used for the major menu.`,
     const eta = new Eta()
 
     const rendered = eta.renderString(WIDGET_TEMPLATE, {
-      wk_path: Deno.execPath(),
+      wk_path: process.execPath,
       leader: leader === undefined ? undefined : shellQuote(leader),
       majorLeader: majorLeader === undefined ? undefined : shellQuote(majorLeader),
       majorPrefix: shellQuote(majorPrefix),

@@ -1,4 +1,4 @@
-import * as z from '@zod/mini'
+import * as z from 'zod/mini'
 
 // The single source of truth for what a `config.yaml` and a `wk.yaml` may
 // contain. `schemas/config.json` in a release tarball is generated from here by

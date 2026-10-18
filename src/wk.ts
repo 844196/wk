@@ -10,3 +10,7 @@ await new Command()
   .command('init', initCommand)
   .command('run', runCommand)
   .parse()
+
+// cliffy's keypress leaves a `readable` listener on process.stdin, which keeps
+// the event loop alive after the action.
+process.exit(0)
