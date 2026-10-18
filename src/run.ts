@@ -25,7 +25,14 @@ function summarize(e: unknown): string {
 //
 // `<base>.yaml` is read in preference to `<base>.yml`, the order docker compose
 // uses. Having both is not reported: on success wk's stderr has nowhere to go.
-async function loadYaml<T>(base: string, fallback: T, parse: (given: unknown) => ParseResult<T>): Promise<T> {
+//
+// The path that was read comes back with the value, or undefined if neither
+// file exists.
+async function loadYaml<T>(
+  base: string,
+  fallback: T,
+  parse: (given: unknown) => ParseResult<T>,
+): Promise<{ path: string | undefined; value: T }> {
   let path = ''
   let text: string | undefined
   for (const extension of ['yaml', 'yml']) {
@@ -40,7 +47,7 @@ async function loadYaml<T>(base: string, fallback: T, parse: (given: unknown) =>
     }
   }
   if (text === undefined) {
-    return fallback
+    return { path: undefined, value: fallback }
   }
 
   let parsed: unknown
@@ -53,7 +60,7 @@ async function loadYaml<T>(base: string, fallback: T, parse: (given: unknown) =>
   // An empty document — blank, comments only, `---`, `null`, `~` — parses to
   // null. Treat it exactly like an absent file.
   if (parsed === null || parsed === undefined) {
-    return fallback
+    return { path, value: fallback }
   }
 
   const result = parse(parsed)
@@ -61,7 +68,7 @@ async function loadYaml<T>(base: string, fallback: T, parse: (given: unknown) =>
     throw new ConfigError(path, result.reason)
   }
 
-  return result.value
+  return { path, value: result.value }
 }
 
 function abbreviateHome(path: string): string {
@@ -146,17 +153,22 @@ For example, this simulates pressing "g", "p", and "f".`,
     // Loaded here rather than at the top of the file: pulling in the schema
     // costs a few milliseconds, and `wk init` — which runs from `.zshrc` on
     // every new shell — has no configuration to validate.
-    const { ContextSchema, defaultContext, parseFile } = await import('./schema.ts')
+    const { defaultContext, parseFile, resolveContext } = await import('./schema.ts')
 
     const load = async () => {
       const global = await loadYaml(joinPath(WK_CONFIG_HOME, 'config'), {}, parseFile)
       const local = await loadYaml(joinPath(Deno.cwd(), 'wk'), {}, parseFile)
-      // Both files have already been checked under their own names, so this
-      // parse only fills in the defaults — after the merge, so that a default
-      // never stands in for a value the global file set.
-      const ctx = ContextSchema.parse(mergeContext(global.config ?? {}, local.config ?? {}))
-      const bindings = sortBindings(mergeBindings(global.bindings ?? [], local.bindings ?? []))
-      return [ctx, bindings] as const
+      // The defaults are filled in after the merge, so that a default never
+      // stands in for a value the global file set.
+      const ctx = resolveContext(mergeContext(global.value.config ?? {}, local.value.config ?? {}))
+      if (!ctx.ok) {
+        // A merge that fails is the local file's doing: the global one passed
+        // on its own. With no local file the merge is the global file as it
+        // was, which cannot fail here.
+        throw new ConfigError(local.path ?? global.path ?? joinPath(WK_CONFIG_HOME, 'config.yaml'), ctx.reason)
+      }
+      const bindings = sortBindings(mergeBindings(global.value.bindings ?? [], local.value.bindings ?? []))
+      return [ctx.value, bindings] as const
     }
 
     const tty = await Deno.open('/dev/tty', { read: true, write: true })
