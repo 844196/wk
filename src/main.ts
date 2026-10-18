@@ -1,7 +1,7 @@
-import { type KeyPressEvent } from '@cliffy/keypress'
+import type { KeyPressEvent } from '@cliffy/keypress'
 import { PRINTABLE_ASCII } from './const.ts'
 import { AbortError, KeyParseError, UndefinedKeyError } from './errors.ts'
-import { type Binding, type Command } from './schema.ts'
+import type { Binding, Command } from './schema.ts'
 
 export type Dependencies = {
   keypress: () => AsyncIterable<KeyPressEvent>
@@ -13,6 +13,7 @@ export type Dependencies = {
 export async function main(deps: Dependencies, bindings: Binding[]): Promise<Command> {
   const inputKeys: string[] = []
   const navigation: [Binding[], ...Binding[][]] = [bindings]
+  const current = (): Binding[] => navigation[navigation.length - 1]
 
   deps.draw(inputKeys, bindings)
   deps.setTimeoutTimer()
@@ -36,7 +37,7 @@ export async function main(deps: Dependencies, bindings: Binding[]): Promise<Com
       inputKeys.pop()
       navigation.pop()
 
-      deps.draw(inputKeys, navigation.at(-1)!)
+      deps.draw(inputKeys, current())
       deps.setTimeoutTimer()
 
       continue
@@ -50,7 +51,7 @@ export async function main(deps: Dependencies, bindings: Binding[]): Promise<Com
       inputKeys.length = 0
       navigation.splice(1)
 
-      deps.draw(inputKeys, navigation.at(-1)!)
+      deps.draw(inputKeys, current())
       deps.setTimeoutTimer()
 
       continue
@@ -65,7 +66,7 @@ export async function main(deps: Dependencies, bindings: Binding[]): Promise<Com
     const inputKey = key.shiftKey ? key.key.toUpperCase() : key.key
     inputKeys.push(inputKey)
 
-    const match = navigation.at(-1)!.find((b) => b.key === inputKey)
+    const match = current().find((b) => b.key === inputKey)
     if (!match) {
       throw new UndefinedKeyError(inputKeys)
     }

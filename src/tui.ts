@@ -4,11 +4,11 @@ import { keypress, KeyPressEvent } from '@cliffy/keypress'
 import { stripAnsiCode } from '@std/fmt/colors'
 import { type KeyCode, parse as parseKeycode } from '@cliffy/keycode'
 
-// deno-lint-ignore no-control-regex
+// biome-ignore lint/suspicious/noControlCharactersInRegex: ESC opens the terminal's reply.
 const CURSOR_POSITION_REPLY = /\x1b\[(\d+);(\d+)R/
 
 // @cliffy/keycode stops after one modifier digit, so a two-digit column loses the trailing R.
-// deno-lint-ignore no-control-regex
+// biome-ignore lint/suspicious/noControlCharactersInRegex: ESC opens the key sequence.
 const CURSOR_POSITION_REPLY_KEY = /^\x1b\[\d+;\d+R?$/
 
 const CURSOR_POSITION_READ_LIMIT = 8
@@ -72,7 +72,7 @@ export class TUI {
 
         const match = buffered.match(CURSOR_POSITION_REPLY)
         if (match) {
-          this.#typeAhead += buffered.slice(0, match.index) + buffered.slice(match.index! + match[0].length)
+          this.#typeAhead += buffered.replace(CURSOR_POSITION_REPLY, '')
           return { y: Number(match[1]), x: Number(match[2]) }
         }
 
