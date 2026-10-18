@@ -1,7 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { join as joinPath } from 'node:path'
 import { Command, EnumType } from '@cliffy/command'
-import { parse as parseYaml } from '@std/yaml'
 import { WK_CONFIG_HOME } from './const.ts'
 import { openTty, TUI } from './tui.ts'
 import type { Binding, ContextInput, ParseResult } from './schema.ts'
@@ -9,9 +8,8 @@ import { type Dependencies, main } from './main.ts'
 import { getKeySymbol, renderPrompt, renderTable } from './ui.ts'
 import { AbortError, ConfigError, KeyParseError, UndefinedKeyError } from './errors.ts'
 
-// `@std/yaml` reports `at line N, column M` on the first line, then an excerpt
-// and a caret. Only the first line fits `zle -M`, and its trailing colon
-// introduces the excerpt that is being dropped.
+// Only the first line of a message fits `zle -M`, and a trailing colon would
+// introduce whatever follows it.
 //
 // Node's IO errors put the errno code in front and may append the syscall
 // and the path (`EACCES: permission denied, open '/x'`). The code is for
@@ -58,7 +56,7 @@ async function loadYaml<T>(
 
   let parsed: unknown
   try {
-    parsed = parseYaml(text)
+    parsed = Bun.YAML.parse(text)
   } catch (e: unknown) {
     throw new ConfigError(path, summarize(e))
   }

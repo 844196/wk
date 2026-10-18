@@ -67,7 +67,6 @@ YAML
   assert_equal "$status" 7
   # The wording comes from the YAML parser, so only the shape wk adds is pinned.
   assert_stderr_contains "${XDG_CONFIG_HOME}/wk/config.yaml: "
-  assert_stderr_contains 'at line 3, column 10'
 }
 
 @test "an unterminated string in the config section stops wk" {
@@ -84,7 +83,6 @@ YAML
 
   assert_equal "$status" 7
   assert_stderr_contains "${XDG_CONFIG_HOME}/wk/config.yaml: "
-  assert_stderr_contains 'at line 7, column 1'
 }
 
 @test "a malformed local file stops wk" {
