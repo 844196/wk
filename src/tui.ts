@@ -3,7 +3,6 @@ import { ReadStream } from 'node:tty'
 import { ansi } from '@cliffy/ansi'
 import { cursorPosition } from '@cliffy/ansi/ansi-escapes'
 import { keypress, KeyPressEvent } from '@cliffy/keypress'
-import { stripAnsiCode } from '@std/fmt/colors'
 import { type KeyCode, parse as parseKeycode } from '@cliffy/keycode'
 
 // biome-ignore lint/suspicious/noControlCharactersInRegex: ESC opens the terminal's reply.
@@ -137,7 +136,7 @@ export class TUI {
         .text('\x1b[0J')
         .text(tableLines)
         .cursorUp(tableLines.split('\n').length)
-        .cursorLeft.cursorMove(stripAnsiCode(promptLine).length, 0)
+        .cursorLeft.cursorMove(Bun.stripANSI(promptLine).length, 0)
         .cursorShow.bytes(),
     )
   }
