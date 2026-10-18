@@ -7,15 +7,15 @@
 
 ## :package: Installation
 
-1. Download the archive for your platform from the latest release and extract it:
+1. Install with [mise](https://mise.jdx.dev/) (2026.9.2 or later):
 
-   <https://github.com/844196/wk/releases/latest>
+   ```shell
+   mise use -g packslip:github.com/844196/wk
+   ```
 
-   It holds the `wk` binary, the JSON Schemas for the configuration files, and the license.
+   mise checks the release's [packslip](https://packslip.dev/) signature before installing it.
 
-2. Put the `wk` binary into your `$PATH`.
-
-3. Activate in `$ZDOTDIR/.zshrc`:
+2. Activate in `$ZDOTDIR/.zshrc`:
 
    ```shell
    # Bind space as the leader key and comma as the major-leader key.
@@ -23,7 +23,7 @@
    eval "$(wk init --leader ' ' --major-leader ',' --major-prefix 'm')"
    ```
 
-4. Restart zsh.
+3. Restart zsh.
 
 > [!TIP]
 > If you want to register only the widgets, change it as follows:
@@ -31,6 +31,12 @@
 > ```shell
 > eval "$(wk init)"
 > ```
+
+### Other methods
+
+Download the archive for your platform from the [latest release](https://github.com/844196/wk/releases/latest),
+extract it, and put the `wk` binary into your `$PATH`. Then continue from step 2 above. The archive
+also holds the JSON Schemas for the configuration files and the license.
 
 ## :gear: Configuration
 
@@ -103,8 +109,9 @@ bindings:
         accept: true
 ```
 
-The modeline on the first line points your editor at the schema in the extracted archive, for
-completion and validation. The same schema covers both files.
+The modeline on the first line points your editor at the schema, for completion and validation. The
+schema ships in the release archive as `schemas/config.json`; with mise, look for it inside the
+directory that `mise where packslip:github.com/844196/wk` prints. The same schema covers both files.
 
 A `key` is the key to press. YAML reads an unquoted digit as a number, and wk reads it back as that
 digit, so `key: 1` and `key: '1'` both bind the `1` key. Most punctuation needs no quoting either —
