@@ -248,15 +248,18 @@ function toReason(error: { issues: readonly { path: PropertyKey[]; message: stri
 }
 
 // The sections `orAbsent` lets through as null, dropped so that the value is
-// what `ContextInput` says it is. Only a mapping can be null once the schema has
-// accepted it — a null scalar is rejected — so nothing else is touched.
-function dropNulls<T>(given: T): T {
-  if (typeof given !== 'object' || given === null || Array.isArray(given)) {
-    return given
+// what `ContextInput` says it is. Named one by one rather than found by walking
+// the whole value: `config:` lets unknown fields through untouched, and a YAML
+// alias can make one of those refer to itself.
+function dropNulls(given: ContextInput): ContextInput {
+  const { symbols, colors, ...rest } = given
+  const config: ContextInput = rest
+  if (colors != null) config.colors = colors
+  if (symbols != null) {
+    const { keys, ...others } = symbols
+    config.symbols = keys == null ? others : { ...others, keys }
   }
-  return Object.fromEntries(
-    Object.entries(given).filter(([, value]) => value !== null).map(([key, value]) => [key, dropNulls(value)]),
-  ) as T
+  return config
 }
 
 export function parseFile(given: unknown): ParseResult<ConfigFile> {
