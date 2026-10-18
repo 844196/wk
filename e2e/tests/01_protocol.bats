@@ -9,7 +9,7 @@ setup() {
 }
 
 @test "the default delimiter is a tab and the payload is prefixed by two of them" {
-  load_fixture basic.bindings.yaml "${XDG_CONFIG_HOME}/wk/bindings.yaml"
+  load_fixture basic.yaml "${XDG_CONFIG_HOME}/wk/config.yaml"
 
   wk_run --inputs 'g p'
 
@@ -21,12 +21,13 @@ setup() {
 }
 
 @test "key, desc, icon and type are stripped from the output" {
-  write_bindings <<'YAML'
-- key: l
-  type: command
-  desc: List
-  icon: LS
-  buffer: ls -la
+  write_global <<'YAML'
+bindings:
+  - key: l
+    type: command
+    desc: List
+    icon: LS
+    buffer: ls -la
 YAML
 
   wk_run --inputs 'l'
@@ -36,12 +37,13 @@ YAML
 }
 
 @test "boolean fields are emitted as key:value" {
-  write_bindings <<'YAML'
-- key: l
-  type: command
-  buffer: ls -la
-  eval: true
-  accept: true
+  write_global <<'YAML'
+bindings:
+  - key: l
+    type: command
+    buffer: ls -la
+    eval: true
+    accept: true
 YAML
 
   wk_run --inputs 'l'
@@ -51,11 +53,12 @@ YAML
 }
 
 @test "false is emitted explicitly rather than omitted" {
-  write_bindings <<'YAML'
-- key: l
-  type: command
-  buffer: ls -la
-  eval: false
+  write_global <<'YAML'
+bindings:
+  - key: l
+    type: command
+    buffer: ls -la
+    eval: false
 YAML
 
   wk_run --inputs 'l'
@@ -65,14 +68,14 @@ YAML
 }
 
 @test "config outputDelimiter replaces the tab" {
-  write_config <<'YAML'
-outputDelimiter: ','
-YAML
-  write_bindings <<'YAML'
-- key: l
-  type: command
-  buffer: ls -la
-  eval: true
+  write_global <<'YAML'
+config:
+  outputDelimiter: ','
+bindings:
+  - key: l
+    type: command
+    buffer: ls -la
+    eval: true
 YAML
 
   wk_run --inputs 'l'
@@ -82,15 +85,15 @@ YAML
 }
 
 @test "a binding delimiter wins over config outputDelimiter and is not emitted itself" {
-  write_config <<'YAML'
-outputDelimiter: ','
-YAML
-  write_bindings <<'YAML'
-- key: l
-  type: command
-  buffer: ls -la
-  delimiter: '|'
-  eval: true
+  write_global <<'YAML'
+config:
+  outputDelimiter: ','
+bindings:
+  - key: l
+    type: command
+    buffer: ls -la
+    delimiter: '|'
+    eval: true
 YAML
 
   wk_run --inputs 'l'
@@ -100,11 +103,12 @@ YAML
 }
 
 @test "an arbitrary string field is passed through as key:value" {
-  write_bindings <<'YAML'
-- key: l
-  type: command
-  buffer: ls -la
-  note: hello world
+  write_global <<'YAML'
+bindings:
+  - key: l
+    type: command
+    buffer: ls -la
+    note: hello world
 YAML
 
   wk_run --inputs 'l'
@@ -114,10 +118,11 @@ YAML
 }
 
 @test "an empty buffer still produces the two leading delimiters" {
-  write_bindings <<'YAML'
-- key: l
-  type: command
-  buffer: ''
+  write_global <<'YAML'
+bindings:
+  - key: l
+    type: command
+    buffer: ''
 YAML
 
   wk_run --inputs 'l'
@@ -127,10 +132,11 @@ YAML
 }
 
 @test "a multibyte buffer survives unchanged" {
-  write_bindings <<'YAML'
-- key: l
-  type: command
-  buffer: 'echo こんにちは'
+  write_global <<'YAML'
+bindings:
+  - key: l
+    type: command
+    buffer: 'echo こんにちは'
 YAML
 
   wk_run --inputs 'l'
@@ -143,14 +149,15 @@ YAML
   # The payload is joined without escaping, so a buffer holding the delimiter
   # arrives at the widget as several fields. That is what the per-binding
   # `delimiter` is for: choose one the buffer cannot contain.
-  write_bindings <<'YAML'
-- key: l
-  type: command
-  buffer: "a\tb"
-- key: d
-  type: command
-  buffer: "a\tb"
-  delimiter: '|'
+  write_global <<'YAML'
+bindings:
+  - key: l
+    type: command
+    buffer: "a\tb"
+  - key: d
+    type: command
+    buffer: "a\tb"
+    delimiter: '|'
 YAML
 
   wk_run --inputs 'l'

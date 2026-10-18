@@ -3,7 +3,7 @@ import { join as joinPath } from '@std/path'
 import { parse as parseYaml } from '@std/yaml'
 import { WK_CONFIG_HOME } from './const.ts'
 import { TUI } from './tui.ts'
-import type { Binding, ParseResult } from './schema.ts'
+import type { Binding, ContextInput, ParseResult } from './schema.ts'
 import { Dependencies, main } from './main.ts'
 import { getKeySymbol, renderPrompt, renderTable } from './ui.ts'
 import { AbortError, ConfigError, KeyParseError, UndefinedKeyError } from './errors.ts'
@@ -22,15 +22,25 @@ function summarize(e: unknown): string {
 // A missing file is the only silent fallback. Anything else — a syntax error, a
 // shape mismatch, EACCES, EISDIR — stops wk, so that a typo cannot quietly
 // change how it behaves.
-async function loadYaml<T>(path: string, fallback: T, parse: (given: unknown) => ParseResult<T>): Promise<T> {
-  let text: string
-  try {
-    text = await Deno.readTextFile(path)
-  } catch (e: unknown) {
-    if (e instanceof Deno.errors.NotFound) {
-      return fallback
+//
+// `<base>.yaml` is read in preference to `<base>.yml`, the order docker compose
+// uses. Having both is not reported: on success wk's stderr has nowhere to go.
+async function loadYaml<T>(base: string, fallback: T, parse: (given: unknown) => ParseResult<T>): Promise<T> {
+  let path = ''
+  let text: string | undefined
+  for (const extension of ['yaml', 'yml']) {
+    path = `${base}.${extension}`
+    try {
+      text = await Deno.readTextFile(path)
+      break
+    } catch (e: unknown) {
+      if (!(e instanceof Deno.errors.NotFound)) {
+        throw new ConfigError(path, summarize(e))
+      }
     }
-    throw new ConfigError(path, summarize(e))
+  }
+  if (text === undefined) {
+    return fallback
   }
 
   let parsed: unknown
@@ -85,6 +95,24 @@ function mergeBindings(global: Binding[], local: Binding[]): Binding[] {
   return [...firstByKey([...local, ...global]).values()]
 }
 
+// Local settings override global ones field by field, so that a project can
+// change one colour or one symbol and keep the rest. A colour is a single value
+// even when it is written as `{ color, attrs }`, so it is replaced whole;
+// `symbols.keys` is a mapping of independent entries, so it is merged per key.
+// A section written with nothing under it is null, and spreads as nothing.
+function mergeContext(global: ContextInput, local: ContextInput): ContextInput {
+  return {
+    ...global,
+    ...local,
+    symbols: {
+      ...global.symbols,
+      ...local.symbols,
+      keys: { ...global.symbols?.keys, ...local.symbols?.keys },
+    },
+    colors: { ...global.colors, ...local.colors },
+  }
+}
+
 // A fixed locale rather than the ambient one, so key order doesn't shift
 // with the user's `LANG`. `numeric` compares a digit run by value (f2
 // before f10 — ICU chunks past 254 significant digits, well past any real
@@ -118,14 +146,17 @@ For example, this simulates pressing "g", "p", and "f".`,
     // Loaded here rather than at the top of the file: pulling in the schema
     // costs a few milliseconds, and `wk init` — which runs from `.zshrc` on
     // every new shell — has no configuration to validate.
-    const { defaultContext, parseBindings, parseContext } = await import('./schema.ts')
+    const { ContextSchema, defaultContext, parseFile } = await import('./schema.ts')
 
     const load = async () => {
-      const ctx = await loadYaml(joinPath(WK_CONFIG_HOME, 'config.yaml'), defaultContext, parseContext)
-      const empty: Binding[] = []
-      const globalBindings = await loadYaml(joinPath(WK_CONFIG_HOME, 'bindings.yaml'), empty, parseBindings)
-      const localBindings = await loadYaml(joinPath(Deno.cwd(), 'wk.bindings.yaml'), empty, parseBindings)
-      return [ctx, sortBindings(mergeBindings(globalBindings, localBindings))] as const
+      const global = await loadYaml(joinPath(WK_CONFIG_HOME, 'config'), {}, parseFile)
+      const local = await loadYaml(joinPath(Deno.cwd(), 'wk'), {}, parseFile)
+      // Both files have already been checked under their own names, so this
+      // parse only fills in the defaults — after the merge, so that a default
+      // never stands in for a value the global file set.
+      const ctx = ContextSchema.parse(mergeContext(global.config ?? {}, local.config ?? {}))
+      const bindings = sortBindings(mergeBindings(global.bindings ?? [], local.bindings ?? []))
+      return [ctx, bindings] as const
     }
 
     const tty = await Deno.open('/dev/tty', { read: true, write: true })

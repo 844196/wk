@@ -5,7 +5,7 @@
 setup() {
   load '../helpers/common'
   setup_wk_env
-  load_fixture nested.bindings.yaml "${XDG_CONFIG_HOME}/wk/bindings.yaml"
+  load_fixture nested.yaml "${XDG_CONFIG_HOME}/wk/config.yaml"
 }
 
 @test "descending two levels selects the leaf command" {
@@ -45,10 +45,11 @@ setup() {
 }
 
 @test "a shifted key matches an uppercase binding key" {
-  write_bindings <<'YAML'
-- key: G
-  type: command
-  buffer: git status
+  write_global <<'YAML'
+bindings:
+  - key: G
+    type: command
+    buffer: git status
 YAML
 
   wk_run --inputs 'G'
@@ -58,16 +59,17 @@ YAML
 }
 
 @test "return, space and tab match their key names" {
-  write_bindings <<'YAML'
-- key: return
-  type: command
-  buffer: buffer-return
-- key: space
-  type: command
-  buffer: buffer-space
-- key: tab
-  type: command
-  buffer: buffer-tab
+  write_global <<'YAML'
+bindings:
+  - key: return
+    type: command
+    buffer: buffer-return
+  - key: space
+    type: command
+    buffer: buffer-space
+  - key: tab
+    type: command
+    buffer: buffer-tab
 YAML
 
   wk_run --inputs '\x0d'
@@ -86,10 +88,11 @@ YAML
 }
 
 @test "an arrow key matches the up binding key" {
-  write_bindings <<'YAML'
-- key: up
-  type: command
-  buffer: buffer-up
+  write_global <<'YAML'
+bindings:
+  - key: up
+    type: command
+    buffer: buffer-up
 YAML
 
   wk_run --inputs '\x1b[A'
@@ -99,13 +102,14 @@ YAML
 }
 
 @test "a duplicated key resolves to the first definition" {
-  write_bindings <<'YAML'
-- key: l
-  type: command
-  buffer: first
-- key: l
-  type: command
-  buffer: second
+  write_global <<'YAML'
+bindings:
+  - key: l
+    type: command
+    buffer: first
+  - key: l
+    type: command
+    buffer: second
 YAML
 
   wk_run --inputs 'l'

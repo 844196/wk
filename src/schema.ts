@@ -1,7 +1,7 @@
 import * as z from '@zod/mini'
 
-// The single source of truth for what a `config.yaml` and a `bindings.yaml` may
-// contain. `schemas/*.json` in a release tarball is generated from here by
+// The single source of truth for what a `config.yaml` and a `wk.yaml` may
+// contain. `schemas/config.json` in a release tarball is generated from here by
 // `mise run generate:schemas`, and the types below are inferred from it, so
 // there is only one place to change when a field is added or removed.
 //
@@ -75,7 +75,7 @@ const BindingSchema: z.ZodMiniType = z.discriminatedUnion(
 )
 z.globalRegistry.add(BindingSchema, { id: 'Binding' })
 
-export const BindingsSchema = z.array(BindingSchema, expected('a list of bindings'))
+const BindingsSchema = z.array(BindingSchema, expected('a list of bindings'))
 
 export type Command = z.infer<typeof CommandSchema>
 export type Group = Omit<z.infer<typeof GroupSchema>, 'bindings'> & { bindings: Binding[] }
@@ -214,6 +214,25 @@ export type Context = z.infer<typeof ContextSchema>
 
 export const defaultContext: Context = ContextSchema.parse({})
 
+// ---------------------------------------------------------------- file
+
+// The global `config.yaml` and the local `wk.yaml` share this one shape, so that
+// a project can override any part of what the user set globally. Strict, so that
+// a misspelt section — or a v1 `config.yaml` with `timeout:` at the top — stops
+// wk instead of being skipped.
+export const FileSchema = z.strictObject({
+  config: orAbsent(z.optional(ContextSchema)),
+  bindings: orAbsent(z.optional(BindingsSchema)),
+}, {
+  error: (issue) =>
+    issue.code === 'unrecognized_keys'
+      ? `unknown field ${issue.keys.map((key) => `"${key}"`).join(', ')}`
+      : 'expected a mapping',
+})
+
+export type ContextInput = z.input<typeof ContextSchema>
+export type ConfigFile = { config?: ContextInput; bindings?: Binding[] }
+
 // ---------------------------------------------------------------- parsing
 
 export type ParseResult<T> = { ok: true; value: T } | { ok: false; reason: string }
@@ -228,18 +247,18 @@ function toReason(error: { issues: readonly { path: PropertyKey[]; message: stri
   return path === '' ? issue.message : `${path}: ${issue.message}`
 }
 
-export function parseBindings(given: unknown): ParseResult<Binding[]> {
-  const result = BindingsSchema.safeParse(given)
+export function parseFile(given: unknown): ParseResult<ConfigFile> {
+  const result = FileSchema.safeParse(given)
   if (!result.success) {
     return { ok: false, reason: toReason(result.error) }
   }
+  // `config` is handed back as written, not as parsed: filling in the defaults
+  // here would let a local file's defaults overwrite what the global one set.
+  // The parse above has already vouched for it, and `run.ts` fills the defaults
+  // in once both files are merged.
+  const { config } = given as { config?: ContextInput | null }
   // `BindingSchema` is annotated as an opaque `ZodMiniType` to break the
   // recursion between a group and its own items, so what comes back is untyped
   // even though it matched.
-  return { ok: true, value: result.data as Binding[] }
-}
-
-export function parseContext(given: unknown): ParseResult<Context> {
-  const result = ContextSchema.safeParse(given)
-  return result.success ? { ok: true, value: result.data } : { ok: false, reason: toReason(result.error) }
+  return { ok: true, value: { config: config ?? undefined, bindings: result.data.bindings as Binding[] | undefined } }
 }
