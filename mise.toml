@@ -17,11 +17,7 @@ run = 'biome format'
 run = 'biome lint --error-on-warnings'
 
 [tasks.'check:type']
-depends = 'generate:version'
 run = 'bun run tsc'
-
-[tasks.'generate:version']
-run = 'echo "${VERSION:-unknown}" > VERSION'
 
 [tasks.build]
 depends = [
@@ -32,7 +28,6 @@ depends = [
 ]
 
 [tasks.'build:internal']
-depends = 'generate:version'
 run = '''
 set -eu
 target='{{arg(name="target")}}'
@@ -43,7 +38,9 @@ case "${target}" in
   aarch64-apple-darwin) bun_target=bun-darwin-arm64 ;;
   *) echo "unknown target: ${target}" >&2; exit 1 ;;
 esac
-bun build --compile --minify --target="${bun_target}" --outfile "dist/wk-${target}" src/wk.ts
+bun build --compile --minify --target="${bun_target}" \
+  --define WK_VERSION="\"${VERSION:-unknown}\"" \
+  --outfile "dist/wk-${target}" src/wk.ts
 '''
 hide = true
 
