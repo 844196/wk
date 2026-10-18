@@ -27,7 +27,7 @@ driver はコンパイル済みバイナリだけを叩く。暗黙にビルド�
 
 環境変数と終了コードの一覧、`driver:` 行の意味は driver.sh 冒頭コメント (引数なし実行でも出る)。以下はそれを読んでも分からないことだけ。
 
-自作フィクスチャはスクラッチパッド (以下 `$SP`) に置く。`WK_BINDINGS` / `WK_CONFIG` / `WK_LOCAL_BINDINGS` は 3 層すべてに効く。config のフィクスチャは無いので自分で書く (部分指定でよい)。
+自作フィクスチャはスクラッチパッド (以下 `$SP`) に置く。`WK_CONFIG` (global の `config.yaml`) / `WK_LOCAL` (local の `wk.yaml`) は 3 層すべてに効く。どちらも `config:` と `bindings:` を持つ同じ形で、既定の `e2e/fixtures/widget.yaml` は `bindings:` だけ。`config:` を試すなら `WK_LOCAL` に `config:` だけを書くのが手早い — local の `config:` は global にフィールド単位で重なるので、既定フィクスチャのメニューはそのまま残る。
 
 ## keys — プロトコルと終了コード
 
@@ -54,14 +54,14 @@ stdout: \t\tgit push
 ./.claude/skills/run-wk/driver.sh keys '\x20'     # スペースキー
 ```
 
-引数を省くとキーを一切送らない。`config.yaml` の `timeout` を見るのはこの形。
+引数を省くとキーを一切送らない。`config.timeout` を見るのはこの形。
 
 ## screen — メニューの描画
 
-tmux ペインで走らせ、キーを 1 つ送るごとに `capture-pane` する。TUI にとってのスクリーンショットはこれ。既定フィクスチャは 2 階層なので、`screen g` で出るパンくずは ` g` の 1 段だけ。`»` で連なるところまで見るには `e2e/fixtures/nested.bindings.yaml` (`g` → `p` → `f`)。
+tmux ペインで走らせ、キーを 1 つ送るごとに `capture-pane` する。TUI にとってのスクリーンショットはこれ。既定フィクスチャは 2 階層なので、`screen g` で出るパンくずは ` g` の 1 段だけ。`»` で連なるところまで見るには `e2e/fixtures/nested.yaml` (`g` → `p` → `f`)。
 
 ```bash
-$ WK_BINDINGS=e2e/fixtures/nested.bindings.yaml ./.claude/skills/run-wk/driver.sh screen g p
+$ WK_CONFIG=e2e/fixtures/nested.yaml ./.claude/skills/run-wk/driver.sh screen g p
 === after 'g' ===
  g
  p ➜ +Push
@@ -72,7 +72,7 @@ $ WK_BINDINGS=e2e/fixtures/nested.bindings.yaml ./.claude/skills/run-wk/driver.s
 
 パンくずに並ぶのは desc ではなく押したキー。`type: command` を選ぶと `wk run` が終了する = ペインも消えるので、リーフまで降りると画面は残らない。これは成功で、出力は `keys` で見る。
 
-画面に出る記号はどれも `config.yaml` の `symbols` で差し替えられる (`src/schema.ts` の `defaultContext`)。
+画面に出る記号はどれも `config:` の `symbols` で差し替えられる (`src/schema.ts` の `defaultContext`)。
 
 | 画面上 | `symbols` のキー | 既定値 | 出る場所 |
 |---|---|---|---|
@@ -130,12 +130,14 @@ BUFFER=[make test] CURSOR=[9]
 
 ## 弾かれる入力・落ちる入力
 
-設定ファイルの不備は落ちずに exit 7 になる。stderr は `<ファイル>: <パス>: <期待>` の 1 行で、パスが悪いフィールドまで案内する (`.../bindings.yaml: [0].bindings[0].key: expected a key name or a digit 0-9`)。`screen` からは `wk exited before drawing a menu` に見えるだけなので、原因は `keys` に流して stderr を読む。配列でない `bindings.yaml`、`desc` の無い `type: bindings`、`bindings:` にスカラを置いたグループ、`buffer: 42`、`colors.prompt: {}`、`outputDelimiter: 42` — どれもここに畳まれる。グローバルとローカルで症状が変わることも無い。
+設定ファイルの不備は落ちずに exit 7 になる。stderr は `<ファイル>: <パス>: <期待>` の 1 行で、パスが悪いフィールドまで案内する (`.../config.yaml: bindings[0].bindings[0].key: expected a key name or a digit 0-9`)。`screen` からは `wk exited before drawing a menu` に見えるだけなので、原因は `keys` に流して stderr を読む。トップレベルの `config` / `bindings` 以外のキー (トップレベルに `timeout:` などを書いた v1 の形の `config.yaml` もここ)、配列でない `bindings:`、`desc` の無い `type: bindings`、`bindings:` にスカラを置いたグループ、`buffer: 42`、`colors.prompt: {}`、`outputDelimiter: 42` — どれもここに畳まれる。グローバルとローカルで症状が変わることも無い。
 
 `key` はクォート無しの数字でも通る。YAML が数値にした `0`〜`9` は wk が文字列に戻す。クォートが要るのは YAML のインジケータ文字だけ — `.` / `$` / `(` / `)` / `+` / `/` / `;` / `<` / `=` / `\` / `^` / `_` はそのまま通る。クォート無しだと `~` / `!` / `?` / `#` は null になって wk が弾き、`"` / `%` / `&` / `'` / `*` / `,` / `-` / `:` / `@` / `[` / `]` / `` ` `` / `{` / `}` は YAML 側の構文エラー、`>` / `|` はブロックスカラ扱いで空文字列になって wk が弾く。どれも exit 7 だが、構文エラーの文言だけパーサ由来。
 
 exit 1 で落ちるのは `--inputs ' '` だけ。空白 split の結果が空文字列 2 つになりキーコードパーサが落ちる。スペースキーは `\x20`。
 
-空ファイルは落ちない。空ドキュメント (0 バイト・改行だけ・空白だけ・コメントだけ・`---`・`null`・`~`) は `src/run.ts` の `loadYaml()` が不在ファイルと同じ扱いに畳む。bindings なら全キー未定義 = exit 5、config なら既定値。
+空ファイルは落ちない。空ドキュメント (0 バイト・改行だけ・空白だけ・コメントだけ・`---`・`null`・`~`) は `src/run.ts` の `loadYaml()` が不在ファイルと同じ扱いに畳む。中身の無い `config:` / `bindings:` も書かなかったのと同じ。global も local も空なら全キー未定義 = exit 5 で、config は既定値。
 
-虚像 — `$PWD/wk.bindings.yaml` は `XDG_CONFIG_HOME` 側を上書きせず後ろに連結される。同じキーがあるとメニューには 2 行とも出るが、選ばれるのは先にある XDG 側で、ローカル側は表示だけされて到達不能になる。
+同じ場所に `config.yaml` と `config.yml` (`wk.yaml` と `wk.yml`) が両方あると `.yaml` だけを読み、`.yml` は壊れていても黙って無視される。`.yml` を直しても効かないときはこれ。v1 の `bindings.yaml` / `wk.bindings.yaml` も読まれない — メニューが空になるだけでエラーは出ない。
+
+local の `bindings:` は同じキーの global の binding をグループごと差し替える (中の bindings は混ざらない)。メニューは出どころによらずキー順に並ぶ。1 つのファイルの中で同じキーが重なったときは先に書いたほうだけが 1 行出て、選ばれるのもそれ。
