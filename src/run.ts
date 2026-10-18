@@ -195,7 +195,7 @@ For example, this simulates pressing "g", "p", and "f".`,
 
       const deps: Dependencies = {
         keypress: tui.keypress.bind(tui),
-        draw: (inputKeys, bindings) => tui.draw(renderPrompt(ctx, inputKeys), renderTable(ctx, bindings).toString()),
+        draw: (inputKeys, bindings) => tui.draw(renderPrompt(ctx, inputKeys), renderTable(ctx, bindings)),
         setTimeoutTimer: () => {
           if (ctx.timeout > 0) {
             timeoutTimerId = setTimeout(handleTimeout, ctx.timeout)
