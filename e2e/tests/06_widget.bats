@@ -7,7 +7,7 @@ setup() {
   load '../helpers/common'
   load '../helpers/tmux'
   setup_wk_env
-  load_fixture widget.bindings.yaml "${XDG_CONFIG_HOME}/wk/bindings.yaml"
+  load_fixture widget.yaml "${XDG_CONFIG_HOME}/wk/config.yaml"
 }
 
 teardown() {
@@ -199,8 +199,9 @@ ZSHRC
 @test "a timeout leaves the buffer untouched" {
   # Long enough that the open menu is reliably observed before the timer fires,
   # even on a loaded machine.
-  write_config <<'YAML'
-timeout: 3000
+  append_global <<'YAML'
+config:
+  timeout: 3000
 YAML
   write_zshrc --leader ' ' --bind-global
   start_zsh_session

@@ -10,11 +10,12 @@ setup() {
   WK_ERR_FILE="${BATS_TEST_TMPDIR}/wk.stderr"
   WK_STATUS_FILE="${BATS_TEST_TMPDIR}/wk.status"
 
-  write_bindings <<'YAML'
-- key: l
-  type: command
-  desc: List
-  buffer: ls -la
+  write_global <<'YAML'
+bindings:
+  - key: l
+    type: command
+    desc: List
+    buffer: ls -la
 YAML
 }
 
@@ -96,7 +97,7 @@ read_wk_result() {
 }
 
 @test "a whole chord typed in one burst reaches the leaf command" {
-  load_fixture nested.bindings.yaml "${XDG_CONFIG_HOME}/wk/bindings.yaml"
+  load_fixture nested.yaml "${XDG_CONFIG_HOME}/wk/config.yaml"
   start_gated_wk_session --up-one-line auto
 
   send_keys 'gpf'

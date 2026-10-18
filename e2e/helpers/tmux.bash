@@ -111,6 +111,12 @@ capture_screen() {
   wk_tmux capture-pane -p
 }
 
+# capture_screen_colors — the visible pane content with tmux's own SGR sequences
+# kept, for the few assertions that are about colour.
+capture_screen_colors() {
+  wk_tmux capture-pane -p -e
+}
+
 _screen_has() {
   capture_screen | grep -qF -- "$1"
 }

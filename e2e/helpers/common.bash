@@ -15,7 +15,7 @@ WK_E2E_DIR="$(cd "${BASH_SOURCE[0]%/*}/.." && pwd)"
 load "${WK_E2E_DIR}/helpers/wait"
 
 # setup_wk_env — isolate HOME, XDG_CONFIG_HOME and the working directory.
-# The working directory matters: `wk run` also reads $PWD/wk.bindings.yaml.
+# The working directory matters: `wk run` also reads $PWD/wk.yaml.
 setup_wk_env() {
   : "${WK_BIN:?WK_BIN must point at a compiled wk binary}"
 
@@ -26,19 +26,20 @@ setup_wk_env() {
   cd "${BATS_TEST_TMPDIR}/cwd" || return 1
 }
 
-# write_bindings — write $XDG_CONFIG_HOME/wk/bindings.yaml from stdin.
-write_bindings() {
-  cat >"${XDG_CONFIG_HOME}/wk/bindings.yaml"
-}
-
-# write_local_bindings — write $PWD/wk.bindings.yaml from stdin.
-write_local_bindings() {
-  cat >"${PWD}/wk.bindings.yaml"
-}
-
-# write_config — write $XDG_CONFIG_HOME/wk/config.yaml from stdin.
-write_config() {
+# write_global — write the global $XDG_CONFIG_HOME/wk/config.yaml from stdin.
+write_global() {
   cat >"${XDG_CONFIG_HOME}/wk/config.yaml"
+}
+
+# append_global — append a section (from stdin) to the global config.yaml, such
+# as a `config:` on top of a fixture's `bindings:`.
+append_global() {
+  cat >>"${XDG_CONFIG_HOME}/wk/config.yaml"
+}
+
+# write_local — write the project-local $PWD/wk.yaml from stdin.
+write_local() {
+  cat >"${PWD}/wk.yaml"
 }
 
 # load_fixture <name> <destination> — copy a fixture file into place.

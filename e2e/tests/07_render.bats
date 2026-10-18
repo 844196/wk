@@ -1,7 +1,8 @@
 #!/usr/bin/env bats
 #
 # Menu rendering. Deliberately shallow: only structure and configured symbols
-# are asserted, never colours or column widths.
+# are asserted, never column widths, and colours only to tell whether the
+# global or the local file's value took effect.
 
 setup() {
   load '../helpers/common'
@@ -14,25 +15,27 @@ teardown() {
 }
 
 @test "rows are ordered by key regardless of declaration order or global/local origin" {
-  write_bindings <<'YAML'
-- key: l
-  type: command
-  desc: List
-  buffer: ls -la
-- key: g
-  type: bindings
-  desc: Git
-  bindings:
-    - key: p
-      type: command
-      desc: Push
-      buffer: git push
+  write_global <<'YAML'
+bindings:
+  - key: l
+    type: command
+    desc: List
+    buffer: ls -la
+  - key: g
+    type: bindings
+    desc: Git
+    bindings:
+      - key: p
+        type: command
+        desc: Push
+        buffer: git push
 YAML
-  write_local_bindings <<'YAML'
-- key: i
-  type: command
-  desc: Info
-  buffer: info
+  write_local <<'YAML'
+bindings:
+  - key: i
+    type: command
+    desc: Info
+    buffer: info
 YAML
   start_wk_session
   wait_for_screen 'List'
@@ -46,15 +49,16 @@ YAML
 }
 
 @test "a duplicated key renders as a single row" {
-  write_bindings <<'YAML'
-- key: l
-  type: command
-  desc: First
-  buffer: first
-- key: l
-  type: command
-  desc: Second
-  buffer: second
+  write_global <<'YAML'
+bindings:
+  - key: l
+    type: command
+    desc: First
+    buffer: first
+  - key: l
+    type: command
+    desc: Second
+    buffer: second
 YAML
   start_wk_session
   wait_for_screen 'First'
@@ -67,19 +71,20 @@ YAML
 }
 
 @test "a duplicated key inside a nested group renders as a single row" {
-  write_bindings <<'YAML'
-- key: g
-  type: bindings
-  desc: Git
-  bindings:
-    - key: p
-      type: command
-      desc: First
-      buffer: first
-    - key: p
-      type: command
-      desc: Second
-      buffer: second
+  write_global <<'YAML'
+bindings:
+  - key: g
+    type: bindings
+    desc: Git
+    bindings:
+      - key: p
+        type: command
+        desc: First
+        buffer: first
+      - key: p
+        type: command
+        desc: Second
+        buffer: second
 YAML
   start_wk_session --inputs 'g'
   wait_for_screen 'First'
@@ -92,15 +97,16 @@ YAML
 }
 
 @test "keys that collate as equal still sort deterministically" {
-  write_bindings <<'YAML'
-- key: "1"
-  type: command
-  desc: One
-  buffer: one
-- key: "01"
-  type: command
-  desc: ZeroOne
-  buffer: zero-one
+  write_global <<'YAML'
+bindings:
+  - key: "1"
+    type: command
+    desc: One
+    buffer: one
+  - key: "01"
+    type: command
+    desc: ZeroOne
+    buffer: zero-one
 YAML
   start_wk_session
   wait_for_screen 'One'
@@ -113,19 +119,20 @@ YAML
 }
 
 @test "keys sort naturally, not lexicographically" {
-  write_bindings <<'YAML'
-- key: f10
-  type: command
-  desc: Ten
-  buffer: ten
-- key: f2
-  type: command
-  desc: Two
-  buffer: two
-- key: f1
-  type: command
-  desc: One
-  buffer: one
+  write_global <<'YAML'
+bindings:
+  - key: f10
+    type: command
+    desc: Ten
+    buffer: ten
+  - key: f2
+    type: command
+    desc: Two
+    buffer: two
+  - key: f1
+    type: command
+    desc: One
+    buffer: one
 YAML
   start_wk_session
   wait_for_screen 'Ten'
@@ -137,15 +144,16 @@ YAML
 }
 
 @test "an uppercase key sorts before its lowercase counterpart" {
-  write_bindings <<'YAML'
-- key: g
-  type: command
-  desc: Lower
-  buffer: lower
-- key: G
-  type: command
-  desc: Upper
-  buffer: upper
+  write_global <<'YAML'
+bindings:
+  - key: g
+    type: command
+    desc: Lower
+    buffer: lower
+  - key: G
+    type: command
+    desc: Upper
+    buffer: upper
 YAML
   start_wk_session
   wait_for_screen 'Upper'
@@ -156,19 +164,20 @@ YAML
 }
 
 @test "sorting is applied recursively to nested groups" {
-  write_bindings <<'YAML'
-- key: g
-  type: bindings
-  desc: Git
-  bindings:
-    - key: p
-      type: command
-      desc: Push
-      buffer: git push
-    - key: c
-      type: command
-      desc: Commit
-      buffer: git commit
+  write_global <<'YAML'
+bindings:
+  - key: g
+    type: bindings
+    desc: Git
+    bindings:
+      - key: p
+        type: command
+        desc: Push
+        buffer: git push
+      - key: c
+        type: command
+        desc: Commit
+        buffer: git commit
 YAML
   start_wk_session --inputs 'g'
   wait_for_screen 'Commit'
@@ -180,10 +189,11 @@ YAML
 }
 
 @test "a command without a description falls back to its buffer" {
-  write_bindings <<'YAML'
-- key: n
-  type: command
-  buffer: no-desc-buffer
+  write_global <<'YAML'
+bindings:
+  - key: n
+    type: command
+    buffer: no-desc-buffer
 YAML
   start_wk_session
   wait_for_screen 'no-desc-buffer'
@@ -193,10 +203,11 @@ YAML
 }
 
 @test "the breadcrumb joins the keys entered so far" {
-  load_fixture nested.bindings.yaml "${XDG_CONFIG_HOME}/wk/bindings.yaml"
-  write_config <<'YAML'
-symbols:
-  prompt: 'WK>'
+  load_fixture nested.yaml "${XDG_CONFIG_HOME}/wk/config.yaml"
+  append_global <<'YAML'
+config:
+  symbols:
+    prompt: 'WK>'
 YAML
   start_wk_session --inputs 'g p'
   wait_for_screen 'Force'
@@ -206,11 +217,12 @@ YAML
 }
 
 @test "key names are rendered through symbols.keys" {
-  write_bindings <<'YAML'
-- key: return
-  type: command
-  desc: Enter
-  buffer: entered
+  write_global <<'YAML'
+bindings:
+  - key: return
+    type: command
+    desc: Enter
+    buffer: entered
 YAML
   start_wk_session
   wait_for_screen 'Enter'
@@ -220,11 +232,12 @@ YAML
 }
 
 @test "a built-in function key symbol resolves for a lowercase key" {
-  write_bindings <<'YAML'
-- key: f1
-  type: command
-  desc: Help
-  buffer: man wk
+  write_global <<'YAML'
+bindings:
+  - key: f1
+    type: command
+    desc: Help
+    buffer: man wk
 YAML
   start_wk_session
   wait_for_screen 'Help'
@@ -234,16 +247,16 @@ YAML
 }
 
 @test "symbols.keys can be overridden from config" {
-  write_config <<'YAML'
-symbols:
-  keys:
-    return: 'RET'
-YAML
-  write_bindings <<'YAML'
-- key: return
-  type: command
-  desc: Enter
-  buffer: entered
+  write_global <<'YAML'
+config:
+  symbols:
+    keys:
+      return: 'RET'
+bindings:
+  - key: return
+    type: command
+    desc: Enter
+    buffer: entered
 YAML
   start_wk_session
   wait_for_screen 'Enter'
@@ -253,21 +266,21 @@ YAML
 }
 
 @test "symbols.prompt, symbols.separator and symbols.group come from config" {
-  write_config <<'YAML'
-symbols:
-  prompt: 'WK>'
-  separator: '::'
-  group: '@'
-YAML
-  write_bindings <<'YAML'
-- key: g
-  type: bindings
-  desc: Git
-  bindings:
-    - key: p
-      type: command
-      desc: Push
-      buffer: git push
+  write_global <<'YAML'
+config:
+  symbols:
+    prompt: 'WK>'
+    separator: '::'
+    group: '@'
+bindings:
+  - key: g
+    type: bindings
+    desc: Git
+    bindings:
+      - key: p
+        type: command
+        desc: Push
+        buffer: git push
 YAML
   start_wk_session
   wait_for_screen 'Git'
@@ -278,15 +291,15 @@ YAML
 }
 
 @test "up-one-line auto keeps the menu below a partially written line" {
-  write_config <<'YAML'
-symbols:
-  prompt: 'WK>'
-YAML
-  write_bindings <<'YAML'
-- key: l
-  type: command
-  desc: List
-  buffer: ls -la
+  write_global <<'YAML'
+config:
+  symbols:
+    prompt: 'WK>'
+bindings:
+  - key: l
+    type: command
+    desc: List
+    buffer: ls -la
 YAML
   # A tmux pane is a real terminal, so it answers the CSI 6n query that
   # getCursorPosition() sends. This is the only place `auto` can be exercised:
@@ -302,15 +315,15 @@ YAML
 }
 
 @test "up-one-line auto draws in place at the start of a line" {
-  write_config <<'YAML'
-symbols:
-  prompt: 'WK>'
-YAML
-  write_bindings <<'YAML'
-- key: l
-  type: command
-  desc: List
-  buffer: ls -la
+  write_global <<'YAML'
+config:
+  symbols:
+    prompt: 'WK>'
+bindings:
+  - key: l
+    type: command
+    desc: List
+    buffer: ls -la
 YAML
   start_wk_session --up-one-line auto
   wait_for_screen 'List'
@@ -318,4 +331,99 @@ YAML
   run capture_screen
   assert_line --index 0 'WK>'
   assert_line --index 1 ' l ➜ List'
+}
+
+@test "symbols.keys from the local file merge with the global ones per key" {
+  write_global <<'YAML'
+config:
+  symbols:
+    keys:
+      return: 'RET'
+bindings:
+  - key: return
+    type: command
+    desc: Enter
+    buffer: entered
+  - key: space
+    type: command
+    desc: Space
+    buffer: spaced
+  - key: tab
+    type: command
+    desc: Tab
+    buffer: tabbed
+YAML
+  write_local <<'YAML'
+config:
+  symbols:
+    keys:
+      tab: 'TAB'
+YAML
+  start_wk_session
+  wait_for_screen 'Enter'
+
+  run capture_screen
+  # A key with no symbol on either side keeps its built-in one.
+  assert_line --index 1 ' RET ➜ Enter'
+  assert_line --index 2 --regexp '^ ␣ +➜ Space$'
+  assert_line --index 3 ' TAB ➜ Tab'
+}
+
+@test "a local colour overrides one global colour and keeps the others" {
+  write_global <<'YAML'
+config:
+  symbols:
+    prompt: 'WK>'
+  colors:
+    prompt: 196
+    group: 46
+bindings:
+  - key: g
+    type: bindings
+    desc: Git
+    bindings:
+      - key: p
+        type: command
+        buffer: git push
+YAML
+  write_local <<'YAML'
+config:
+  colors:
+    prompt: 21
+YAML
+  start_wk_session
+  wait_for_screen 'Git'
+
+  run capture_screen_colors
+  # The global prompt symbol survives a local file that only sets a colour.
+  assert_line --index 0 --partial $'\e[38;5;21mWK>'
+  assert_line --index 1 --partial $'\e[38;5;46m+'
+}
+
+@test "a local colour replaces a global { color, attrs } whole" {
+  write_global <<'YAML'
+config:
+  symbols:
+    prompt: 'WK>'
+  colors:
+    prompt:
+      color: 196
+      attrs: [underline]
+bindings:
+  - key: l
+    type: command
+    buffer: ls -la
+YAML
+  write_local <<'YAML'
+config:
+  colors:
+    prompt: 21
+YAML
+  start_wk_session
+  wait_for_screen 'WK>'
+
+  run capture_screen_colors
+  assert_line --index 0 --partial $'\e[38;5;21mWK>'
+  # The global attrs do not carry over onto the local colour.
+  refute_line --index 0 --partial $'\e[4m'
 }

@@ -6,7 +6,7 @@
 setup() {
   load '../helpers/common'
   setup_wk_env
-  load_fixture basic.bindings.yaml "${XDG_CONFIG_HOME}/wk/bindings.yaml"
+  load_fixture basic.yaml "${XDG_CONFIG_HOME}/wk/config.yaml"
 }
 
 @test "selecting a command exits 0" {
@@ -70,8 +70,9 @@ setup() {
 }
 
 @test "running out of input exits 4 once the configured timeout elapses" {
-  write_config <<'YAML'
-timeout: 500
+  append_global <<'YAML'
+config:
+  timeout: 500
 YAML
 
   wk_run --inputs 'g'
@@ -81,8 +82,9 @@ YAML
 }
 
 @test "timeout 0 disables the timer and wk keeps waiting" {
-  write_config <<'YAML'
-timeout: 0
+  append_global <<'YAML'
+config:
+  timeout: 0
 YAML
 
   # 124 is the sentinel wk_run reports when timeout(1) had to kill the process,
