@@ -68,12 +68,6 @@ config="${WK_CONFIG-${root}/e2e/fixtures/widget.yaml}"
 # "the driver could not run wk" from "wk ran and said this".
 die() { echo "driver: $*" >&2; exit 125; }
 
-# wk no longer reads a separate bindings file, so these would seed nothing and
-# leave the default fixture in place — a run that looks fine and tests the
-# wrong menu.
-[[ -z "${WK_BINDINGS+set}" && -z "${WK_LOCAL_BINDINGS+set}" ]] ||
-  die 'WK_BINDINGS / WK_LOCAL_BINDINGS are gone: put `bindings:` in the file given as WK_CONFIG / WK_LOCAL'
-
 need_bin() {
   [[ -x "$bin" ]] || die "$bin not found. Run: $0 build"
   # Every layer runs wk from inside the sandbox (`cd`, or tmux's `-c`), where a
@@ -200,13 +194,6 @@ send_key() {
   tmx send-keys -H $hex
 }
 
-# send_leader — type the leader key.
-#
-# WK_LEADER is handed to `wk init`, which takes zsh bindkey syntax, so `^G` is a
-# legal leader (src/init.ts uses exactly that in its own example). tmux wants
-# that as the key name `C-g`. Sent literally it would type the two characters
-# `^` and `G`, the menu would never open, and the layer would still print a
-# `BUFFER=` line that reads like a real result.
 # ctrl_letter <bindkey spec> — the control letter a spec names, or empty.
 # bindkey reads `^X` and `\C-X` as the same binding, so anything that reasons
 # about a control leader has to accept both spellings.
@@ -217,6 +204,13 @@ ctrl_letter() {
   esac
 }
 
+# send_leader — type the leader key.
+#
+# WK_LEADER is handed to `wk init`, which takes zsh bindkey syntax, so `^G` is a
+# legal leader (src/init.ts uses exactly that in its own example). tmux wants
+# that as the key name `C-g`. Sent literally it would type the two characters
+# `^` and `G`, the menu would never open, and the layer would still print a
+# `BUFFER=` line that reads like a real result.
 send_leader() {
   local letter
   letter="$(ctrl_letter "$leader")"
@@ -557,12 +551,6 @@ cmd_widget() {
     # completion right here. Report that under its own heading and clear it:
     # left in place it would be read out at the end as the result of the keys,
     # which by then are a different run against a freshly opened menu.
-    # Both kinds of evidence are written after wk exits, and WK_SETTLE is a
-    # knob the caller can set to 0. Poll for the write rather than trusting the
-    # sleep above, or the file lands mid-run and is read out at the end as the
-    # result of the keys — the very thing this block exists to prevent. Gate on
-    # liveness, not on saw_wk: an accept has already exited by now, so saw_wk is
-    # 0 for exactly the case worth catching.
     # Both kinds of evidence are written after wk exits, so a pretype that left
     # wk running needs a beat before the check below can see them. This floor is
     # deliberately not WK_SETTLE: at WK_SETTLE=0 the write would land after the
