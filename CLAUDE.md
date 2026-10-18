@@ -1,6 +1,6 @@
 # wk
 
-zsh向けのwhich-keyライクメニュー。Deno製CLI (`src/wk.ts`) と、それが吐き出すzshウィジェット (`src/widget.eta`) の2層構成。
+zsh向けのwhich-keyライクメニュー。Bun製CLI (`src/wk.ts`) と、それが吐き出すzshウィジェット (`src/widget.eta`) の2層構成。
 
 ## runとwidget の契約
 
@@ -14,20 +14,20 @@ zsh向けのwhich-keyライクメニュー。Deno製CLI (`src/wk.ts`) と、そ�
 
 `key`/`desc`/`buffer` などのフィールドを増減させたら、触るのは `src/schema.ts` と `README.md` の設定例だけ。
 
-- `src/schema.ts` — `@zod/mini` のスキーマ。型 (`Binding`/`Command`/`Context`/`Color`) は `z.infer` で導出、既定値は `z._default`/`z.prefault` が持ち、`defaultContext` は `ContextSchema.parse({})`。手書きの型定義は無い。
+- `src/schema.ts` — `zod/mini` のスキーマ。型 (`Binding`/`Command`/`Context`/`Color`) は `z.infer` で導出、既定値は `z._default`/`z.prefault` が持ち、`defaultContext` は `ContextSchema.parse({})`。手書きの型定義は無い。
 - 設定ファイルはglobalの `$XDG_CONFIG_HOME/wk/config.ya?ml` とlocalの `$PWD/wk.ya?ml` の2つで、どちらも `FileSchema` (`config:` + `bindings:`、トップレベルはstrict) の同じ形。`.yaml` があれば `.yml` は読まない。localの `config:` は `run.ts` の `mergeContext` でフィールド単位に重ね、既定値はマージの後で `resolveContext` が埋める — 各ファイルの段階で埋めるとlocalの既定値がglobalの値を消す。
 - 配布用JSON Schemaはコミットしていない。`mise run generate:schemas` が両ファイル共通の `dist/schemas/config.json` を吐き、`mise run dist <target>` がリリースtarball (`wk-<target>/{wk,LICENSE,schemas/}`) に詰める。生成は `io: 'input'` — ユーザーが書ける形を出す。
-- `@zod/mini` はロケールを積まないので、`error` を渡し忘れた検査は `Invalid input` になる。フィールドを足したら必ず `expected(...)` を渡し、既存の入力を一通り流して `Invalid input` が出ないことを見る。
+- `zod/mini` はロケールを積まないので、`error` を渡し忘れた検査は `Invalid input` になる。フィールドを足したら必ず `expected(...)` を渡し、既存の入力を一通り流して `Invalid input` が出ないことを見る。
 - 設定エラーは `<ファイル>: <パス>: <期待>` の1行で exit 7。パスはzodのissueの `path` から `bindings[0].bindings[0].key` / `config.colors.prompt` の形に組む。
 - `key` は文字列だが、YAMLがクォート無しの数字を数値にするため `0`〜`9` の整数も受けて `String()` で正規化する。クォートが要るのはYAMLのインジケータ文字だけ (nullになるか構文エラー) で、`.` のような大半の記号はそのまま通る。
 
 ## 検証
 
-静的チェックは `mise run check` にまとまっている。`VERSION` はgitignoreされた生成物で `wk.ts` がraw-importしているため、素の `deno check src/wk.ts` は `TS2307` で落ちる。型チェックは `mise run check:type` 経由で走らせる。依存の挙動を単発スクリプトで確かめるときは `deno run --config deno.jsonc <file>` — import map がここにあるので、渡さないと `@cliffy/*` や `@zod/mini` が解決できずに落ちる。`deno.jsonc` は `lock.frozen` なので、依存を足したら `deno install --frozen=false`。`src/main.ts` はキー入力ループを `Dependencies` で注入する形になっているが、まだ差し替え先が存在しない。
+静的チェックは `mise run check` にまとまっている — biomeのformatとlint (warningも落とす) と、TypeScript 7の `tsc`。biomeは `mise.toml` のtools、`tsc` は `package.json` のdevDependenciesから入る。`VERSION` と `widget.eta` は `with { type: 'text' }` で読み込み、`bun build --compile` が文字列として埋め込む。`tsc` 向けの型は `src/text-imports.d.ts` の module 宣言が与えるだけなので、gitignoreされた生成物の `VERSION` が無くても `tsc` は通るが、ビルドは `Could not resolve: "../VERSION"` で落ちる — ビルド系のタスクが `generate:version` に依存しているのはこのため。依存の挙動を単発スクリプトで確かめるときはリポジトリ内で `bun <file>`。依存はnpmにあるものはnpmから `bun add --exact`、cliffy・`@std/yaml`・`@std/fmt` のようにJSRにしか無いものは `bunx jsr add --bun` (`.npmrc` の `@jsr:registry` 経由、`bun add jsr:…` は動かない) で足す。npm.jsr.io が生成する `@cliffy/keypress` の型定義は `[Symbol.asyncIterator]` を落とすので、`src/tui.ts` に cast がある。CIは `bun install --frozen-lockfile` なので `bun.lock` も一緒にコミットする。`src/wk.ts` 末尾の `process.exit(0)` は、cliffy の keypress が `process.stdin` に残すリスナーでプロセスが終わらなくなるのを断つためのもの — 消すと widget の e2e が timeout する。`src/main.ts` はキー入力ループを `Dependencies` で注入する形になっているが、まだ差し替え先が存在しない。
 
-e2eテストが `e2e/` にある。`mise run e2e` でバイナリをビルドしてから走らせ、`mise run e2e:only` は `dist/` の既存バイナリをそのまま使う (パスを渡せば1ファイルだけ — `mise run e2e:only e2e/tests/06_widget.bats`)。`exec format error` は `WK_E2E_TARGET` とバイナリのアーキ不一致。Docker (zsh/tmux/bats-core、Denoは入れない) の中でbats-coreを回し、対象バイナリは `WK_BIN` で受け取る黒箱テスト。将来Denoをやめても受け入れ仕様として使い回せるよう、テスト側からDenoを参照しないこと。層は3つ — `script(1)` でptyを張ってCLIを直叩き (`helpers/common.bash` の `wk_run`)、TTY不要の `wk init`、tmuxで実zshウィジェットを動かす (`helpers/tmux.bash`)。ユニットテストは無い。
+e2eテストが `e2e/` にある。`mise run e2e` でバイナリをビルドしてから走らせ、`mise run e2e:only` は `dist/` の既存バイナリをそのまま使う (パスを渡せば1ファイルだけ — `mise run e2e:only e2e/tests/06_widget.bats`)。`exec format error` は `WK_E2E_TARGET` とバイナリのアーキ不一致。Docker (zsh/tmux/bats-core、ランタイムは入れない) の中でbats-coreを回し、対象バイナリは `WK_BIN` で受け取る黒箱テスト。ランタイムを替えても受け入れ仕様として使い回せるよう、テスト側からBunを参照しないこと。層は3つ — `script(1)` でptyを張ってCLIを直叩き (`helpers/common.bash` の `wk_run`)、TTY不要の `wk init`、tmuxで実zshウィジェットを動かす (`helpers/tmux.bash`)。ユニットテストは無い。
 
-実行しての確認は `.claude/skills/run-wk/` の run-wk スキルにまとめてある。`driver.sh` が使い捨ての `HOME`/`XDG_CONFIG_HOME`/`ZDOTDIR` の中で、`keys` (pty直叩き)・`screen` (tmuxで描画)・`widget` (実zsh) の3層を叩き分ける。手で組み直す必要は無いので、そちらを読む。`wk init` が埋め込むパスは `Deno.execPath()` なので `deno run` 経由だとdeno自身のパスが入る — ウィジェットを見るならビルドしたバイナリで。
+実行しての確認は `.claude/skills/run-wk/` の run-wk スキルにまとめてある。`driver.sh` が使い捨ての `HOME`/`XDG_CONFIG_HOME`/`ZDOTDIR` の中で、`keys` (pty直叩き)・`screen` (tmuxで描画)・`widget` (実zsh) の3層を叩き分ける。手で組み直す必要は無いので、そちらを読む。`wk init` が埋め込むパスは `process.execPath` なので `bun run` 経由だとbun自身のパスが入る — ウィジェットを見るならビルドしたバイナリで。
 
 ## コミット
 
