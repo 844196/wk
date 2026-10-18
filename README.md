@@ -127,7 +127,8 @@ rejected outright, so write `key: '~'` and `key: ':'`.
 - `bindings:` adds to the global bindings. A local binding replaces a global one with the same `key`
   entirely — a group is not merged with the global group it replaces.
 
-The menu is sorted by key, wherever each binding was defined.
+The menu lists commands first and groups after them, each sorted by the symbol it shows — letters
+and digits before other symbols — wherever each binding was defined.
 
 ```yaml
 config:
