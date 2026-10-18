@@ -18,8 +18,8 @@
 #   ./.claude/skills/run-wk/driver.sh init --leader ' '
 #
 # Env:
-#   WK_BIN       binary to drive (default: dist/wk-$WK_TARGET)
-#   WK_TARGET    build target, as mise's build:internal names it (default: x86_64-unknown-linux-gnu)
+#   WK_BIN       binary to drive (default: dist/wk)
+#   WK_TARGET    Bun build target (default: bun-linux-x64)
 #   WK_CONFIG    global config.yaml to seed (default: e2e/fixtures/widget.yaml)
 #   WK_LOCAL     local wk.yaml to drop in the sandbox cwd (default: none)
 #   WK_ZSHRC     file of extra zsh lines appended to the widget layer's .zshrc
@@ -55,8 +55,8 @@ here="$(cd "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)" ||
 root="$(cd "${here}/../../.." && pwd)" ||
   { echo 'driver: could not resolve the repository root' >&2; exit 125; }
 
-target="${WK_TARGET:-x86_64-unknown-linux-gnu}"
-bin="${WK_BIN:-${root}/dist/wk-${target}}"
+target="${WK_TARGET:-bun-linux-x64}"
+bin="${WK_BIN:-${root}/dist/wk}"
 # `-` not `:-`: WK_CONFIG= (explicitly empty) means "seed no config.yaml at
 # all", which `:-` would silently turn back into the default fixture. wk folds
 # an empty file into the same absent-file handling, so the two now behave
@@ -317,8 +317,8 @@ need_procps() {
 
 # --- build -----------------------------------------------------------------
 cmd_build() {
-  ( cd "$root" && mise run "build:internal" "$target" ) || die 'build failed'
-  echo "built: dist/wk-${target}"
+  ( cd "$root" && mise run build "$target" ) || die 'build failed'
+  echo "built: dist/wk"
 }
 
 # --- layer 1: the binary under a pty --------------------------------------
