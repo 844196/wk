@@ -1,6 +1,17 @@
-import { bold, dim, hidden, inverse, italic, rgb24, rgb8, strikethrough, underline } from '@std/fmt/colors'
+import { inspect, styleText } from 'node:util'
 import { border as defaultBorder, Table } from '@cliffy/table'
 import type { Binding, Color, Context } from './schema.ts'
+
+type Attr = Extract<Color, { attrs: unknown }>['attrs'][number]
+
+// bold and dim share their reset, so an inner reset is turned back into this
+// attribute's code to keep it on for the rest of the text.
+// wk draws on /dev/tty, not stdout. Without validateStream: false, styleText
+// drops the codes because stdout is a pipe to the widget.
+function attribute(text: string, attr: Attr) {
+  const [open, close] = inspect.colors[attr] ?? []
+  return styleText(attr, text.replaceAll(`\x1b[${close}m`, `\x1b[${open}m`), { validateStream: false })
+}
 
 function color(text: string, givenColor: Color) {
   const ansi256 = typeof givenColor === 'number' || typeof givenColor === 'string' ? givenColor : givenColor.color
@@ -10,37 +21,10 @@ function color(text: string, givenColor: Color) {
     ansi256 === -1
       ? text
       : typeof ansi256 === 'string'
-        ? rgb24(text, parseInt(ansi256.slice(1), 16))
-        : rgb8(text, ansi256)
+        ? `${Bun.color(ansi256, 'ansi-16m')}${text}\x1b[39m`
+        : `\x1b[38;5;${ansi256}m${text}\x1b[39m`
 
-  let attributed = colorized
-  for (const attr of attrs) {
-    switch (attr) {
-      case 'bold':
-        attributed = bold(attributed)
-        break
-      case 'dim':
-        attributed = dim(attributed)
-        break
-      case 'italic':
-        attributed = italic(attributed)
-        break
-      case 'underline':
-        attributed = underline(attributed)
-        break
-      case 'inverse':
-        attributed = inverse(attributed)
-        break
-      case 'hidden':
-        attributed = hidden(attributed)
-        break
-      case 'strikethrough':
-        attributed = strikethrough(attributed)
-        break
-    }
-  }
-
-  return attributed
+  return attrs.reduce(attribute, colorized)
 }
 
 export function getKeySymbol(ctx: Context, key: string) {
