@@ -64,7 +64,7 @@ bin="${WK_BIN:-${root}/dist/wk-${target}}"
 # alike, but seeding a file and seeding none stay separate cases to set up.
 bindings="${WK_BINDINGS-${root}/e2e/fixtures/widget.bindings.yaml}"
 
-# 125 is deliberately outside wk's range (0-6) and distinct from the 124 that
+# 125 is deliberately outside wk's range (0-7) and distinct from the 124 that
 # `keys` reports for a wk still waiting on a key, so a caller can always tell
 # "the driver could not run wk" from "wk ran and said this".
 die() { echo "driver: $*" >&2; exit 125; }
