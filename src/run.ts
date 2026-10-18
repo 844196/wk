@@ -3,7 +3,7 @@ import { join as joinPath } from 'node:path'
 import { Command, EnumType } from '@cliffy/command'
 import { WK_CONFIG_HOME } from './const.ts'
 import { openTty, TUI } from './tui.ts'
-import type { Binding, ContextInput, ParseResult } from './schema.ts'
+import type { Binding, Context, ContextInput, ParseResult } from './schema.ts'
 import { type Dependencies, main } from './main.ts'
 import { getKeySymbol, renderPrompt, renderTable } from './ui.ts'
 import { AbortError, ConfigError, KeyParseError, UndefinedKeyError } from './errors.ts'
@@ -130,15 +130,29 @@ function mergeContext(global: ContextInput, local: ContextInput): ContextInput {
 // key name), and `caseFirst: 'upper'` keeps `G` before `g`.
 const keyCollator = new Intl.Collator('en', { numeric: true, caseFirst: 'upper' })
 
-// Applied at every nesting level, not just the merged top level. Two
-// distinct keys can collate as equal (e.g. `f2` and `f02` under `numeric`),
-// and `toSorted` is stable, so an exact-string tie-break keeps their order
-// from depending on where each one came from.
-function sortBindings(bindings: Binding[]): Binding[] {
+// ASCII only, like which-key's %w: a symbol such as ⏎ or a Nerd Font glyph
+// is not a letter to the reader, even where Unicode says it is one.
+const ALNUM = /^[A-Za-z0-9]+$/
+
+// Same order as which-key.nvim's default sorters: commands before groups
+// ("group"), then alphanumeric keys before the rest ("alphanum"), then the
+// symbol the menu shows. Applied at every nesting level, not just the merged
+// top level. Two distinct keys can collate as equal (e.g. `f2` and `f02`
+// under `numeric`), and `toSorted` is stable, so an exact-string tie-break
+// keeps their order from depending on where each one came from.
+function sortBindings(ctx: Context, bindings: Binding[]): Binding[] {
+  const typeRank = (b: Binding) => (b.type === 'bindings' ? 1 : 0)
+  const alnumRank = (b: Binding) => (ALNUM.test(getKeySymbol(ctx, b.key)) ? 0 : 1)
   return [...firstByKey(bindings).values()]
-    .toSorted((a, b) => keyCollator.compare(a.key, b.key) || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+    .toSorted(
+      (a, b) =>
+        typeRank(a) - typeRank(b) ||
+        alnumRank(a) - alnumRank(b) ||
+        keyCollator.compare(getKeySymbol(ctx, a.key), getKeySymbol(ctx, b.key)) ||
+        (a.key < b.key ? -1 : a.key > b.key ? 1 : 0),
+    )
     .map((binding) =>
-      binding.type === 'bindings' ? { ...binding, bindings: sortBindings(binding.bindings) } : binding,
+      binding.type === 'bindings' ? { ...binding, bindings: sortBindings(ctx, binding.bindings) } : binding,
     )
 }
 
@@ -173,7 +187,7 @@ For example, this simulates pressing "g", "p", and "f".`,
         // was, which cannot fail here.
         throw new ConfigError(local.path ?? global.path ?? joinPath(WK_CONFIG_HOME, 'config.yaml'), ctx.reason)
       }
-      const bindings = sortBindings(mergeBindings(global.value.bindings ?? [], local.value.bindings ?? []))
+      const bindings = sortBindings(ctx.value, mergeBindings(global.value.bindings ?? [], local.value.bindings ?? []))
       return [ctx.value, bindings] as const
     }
 

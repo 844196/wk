@@ -14,7 +14,7 @@ teardown() {
   stop_zsh_session
 }
 
-@test "rows are ordered by key regardless of declaration order or global/local origin" {
+@test "rows are ordered commands first, then by key, regardless of declaration order or global/local origin" {
   write_global <<'YAML'
 bindings:
   - key: l
@@ -42,10 +42,78 @@ YAML
 
   run capture_screen
   # Declared l-then-g, and i comes from a separate (local) source, but
-  # sorting interleaves all three by key: g, i, l.
-  assert_line --index 1 ' g ➜ +Git'
-  assert_line --index 2 ' i ➜ Info'
-  assert_line --index 3 ' l ➜ List'
+  # sorting interleaves the commands by key and puts the group last: i, l, g.
+  assert_line --index 1 ' i ➜ Info'
+  assert_line --index 2 ' l ➜ List'
+  assert_line --index 3 ' g ➜ +Git'
+}
+
+@test "commands come before groups, and letters before symbols" {
+  write_global <<'YAML'
+bindings:
+  - key: '"'
+    type: bindings
+    desc: Quote
+    bindings:
+      - key: q
+        type: command
+        desc: Quoted
+        buffer: quoted
+  - key: g
+    type: bindings
+    desc: Git
+    bindings:
+      - key: s
+        type: command
+        desc: Status
+        buffer: git status
+  - key: space
+    type: command
+    desc: Space
+    buffer: spaced
+  - key: z
+    type: command
+    desc: Zed
+    buffer: zed
+YAML
+  start_wk_session
+  wait_for_screen 'Zed'
+
+  run capture_screen
+  # `space` shows as ␣, a symbol, so it follows z despite sorting before it
+  # by name.
+  assert_line --index 1 --regexp '^ z +➜ Zed$'
+  assert_line --index 2 --regexp '^ ␣ +➜ Space$'
+  assert_line --index 3 --regexp '^ g +➜ \+Git$'
+  assert_line --index 4 --regexp '^ " +➜ \+Quote$'
+}
+
+@test "commands come before groups inside a nested group too" {
+  write_global <<'YAML'
+bindings:
+  - key: g
+    type: bindings
+    desc: Git
+    bindings:
+      - key: b
+        type: bindings
+        desc: Branch
+        bindings:
+          - key: l
+            type: command
+            desc: List branches
+            buffer: git branch
+      - key: c
+        type: command
+        desc: Commit
+        buffer: git commit
+YAML
+  start_wk_session --inputs 'g'
+  wait_for_screen 'Commit'
+
+  run capture_screen
+  assert_line --index 1 --regexp '^ c +➜ Commit$'
+  assert_line --index 2 --regexp '^ b +➜ \+Branch$'
 }
 
 @test "a duplicated key renders as a single row" {
@@ -384,8 +452,8 @@ YAML
   run capture_screen
   # A key with no symbol on either side keeps its built-in one.
   assert_line --index 1 ' RET ➜ Enter'
-  assert_line --index 2 --regexp '^ ␣ +➜ Space$'
-  assert_line --index 3 ' TAB ➜ Tab'
+  assert_line --index 2 ' TAB ➜ Tab'
+  assert_line --index 3 --regexp '^ ␣ +➜ Space$'
 }
 
 @test "a local colour overrides one global colour and keeps the others" {
