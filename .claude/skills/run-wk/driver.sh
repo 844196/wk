@@ -7,7 +7,7 @@
 # change working; use `mise run e2e` to prove it.
 #
 # keys, screen and widget run wk against a throwaway HOME / XDG_CONFIG_HOME /
-# ZDOTDIR so your own ~/.config/wk/bindings.yaml never leaks in. That isolation
+# ZDOTDIR so your own ~/.config/wk/config.yaml never leaks in. That isolation
 # is the whole reason this script exists instead of a one-liner. build and init
 # read no config and run under your real environment.
 #
@@ -20,9 +20,8 @@
 # Env:
 #   WK_BIN       binary to drive (default: dist/wk-$WK_TARGET)
 #   WK_TARGET    deno compile target (default: x86_64-unknown-linux-gnu)
-#   WK_BINDINGS  bindings.yaml to seed (default: e2e/fixtures/widget.bindings.yaml)
-#   WK_CONFIG    config.yaml to seed (default: none)
-#   WK_LOCAL_BINDINGS  wk.bindings.yaml to drop in the sandbox cwd (default: none)
+#   WK_CONFIG    global config.yaml to seed (default: e2e/fixtures/widget.yaml)
+#   WK_LOCAL     local wk.yaml to drop in the sandbox cwd (default: none)
 #   WK_ZSHRC     file of extra zsh lines appended to the widget layer's .zshrc
 #   WK_REAL_ACCEPT=1   widget layer: let `accept: true` really run the command
 #   WK_BIND_GLOBAL=1   widget layer: `wk init --bind-global`, so the leader fires
@@ -58,16 +57,22 @@ root="$(cd "${here}/../../.." && pwd)" ||
 
 target="${WK_TARGET:-x86_64-unknown-linux-gnu}"
 bin="${WK_BIN:-${root}/dist/wk-${target}}"
-# `-` not `:-`: WK_BINDINGS= (explicitly empty) means "seed no bindings.yaml at
+# `-` not `:-`: WK_CONFIG= (explicitly empty) means "seed no config.yaml at
 # all", which `:-` would silently turn back into the default fixture. wk folds
 # an empty file into the same absent-file handling, so the two now behave
 # alike, but seeding a file and seeding none stay separate cases to set up.
-bindings="${WK_BINDINGS-${root}/e2e/fixtures/widget.bindings.yaml}"
+config="${WK_CONFIG-${root}/e2e/fixtures/widget.yaml}"
 
 # 125 is deliberately outside wk's range (0-7) and distinct from the 124 that
 # `keys` reports for a wk still waiting on a key, so a caller can always tell
 # "the driver could not run wk" from "wk ran and said this".
 die() { echo "driver: $*" >&2; exit 125; }
+
+# wk no longer reads a separate bindings file, so these would seed nothing and
+# leave the default fixture in place — a run that looks fine and tests the
+# wrong menu.
+[[ -z "${WK_BINDINGS+set}" && -z "${WK_LOCAL_BINDINGS+set}" ]] ||
+  die 'WK_BINDINGS / WK_LOCAL_BINDINGS are gone: put `bindings:` in the file given as WK_CONFIG / WK_LOCAL'
 
 need_bin() {
   [[ -x "$bin" ]] || die "$bin not found. Run: $0 build"
@@ -90,14 +95,14 @@ need_bin() {
 }
 
 # --- sandbox ---------------------------------------------------------------
-# wk reads $XDG_CONFIG_HOME/wk/{bindings,config}.yaml and $PWD/wk.bindings.yaml.
+# wk reads $XDG_CONFIG_HOME/wk/config.yaml and $PWD/wk.yaml (or their .yml).
 # Without a sandbox you are testing the developer's own menu, not the fixture.
 sandbox=''
 
 # seed <source> <destination> — copy one named seed file into the sandbox.
 # An empty source means "seed nothing" and is fine; a source that was named but
 # does not exist is fatal. Seeding nothing on a typo would make a misspelled
-# WK_BINDINGS byte-identical to the documented WK_BINDINGS= mode, and the
+# WK_CONFIG byte-identical to the documented WK_CONFIG= mode, and the
 # resulting `"g" is undefined` would read as a wk bug rather than a bad path.
 seed() {
   [[ -z "$1" ]] && return 0
@@ -113,9 +118,8 @@ make_sandbox() {
   [[ -n "$sandbox" ]] || die 'mktemp returned an empty path'
   mkdir -p "${sandbox}/home" "${sandbox}/xdg/wk" "${sandbox}/cwd" "${sandbox}/zdot" ||
     die "could not populate ${sandbox}"
-  seed "$bindings" "${sandbox}/xdg/wk/bindings.yaml"
-  seed "${WK_CONFIG:-}" "${sandbox}/xdg/wk/config.yaml"
-  seed "${WK_LOCAL_BINDINGS:-}" "${sandbox}/cwd/wk.bindings.yaml"
+  seed "$config" "${sandbox}/xdg/wk/config.yaml"
+  seed "${WK_LOCAL:-}" "${sandbox}/cwd/wk.yaml"
   return 0
 }
 
@@ -378,10 +382,10 @@ explain_exit() {
     1) echo '(uncaught error — read stderr; a blank --inputs lands here)' ;;
     2) echo '(bad CLI arguments)' ;;
     3) echo '(abort: escape / ctrl-c / ctrl-d / backspace at root)' ;;
-    4) echo '(timeout — config.yaml timeout elapsed)' ;;
+    4) echo '(timeout — config.timeout elapsed)' ;;
     5) echo '(undefined key)' ;;
     6) echo '(key parse failure)' ;;
-    7) echo '(bad config.yaml or bindings.yaml — stderr names the file and the field)' ;;
+    7) echo '(bad config.yaml or wk.yaml — stderr names the file and the field)' ;;
     124) echo '(driver timeout: wk was still waiting for a key)' ;;
     *) echo '(unknown)' ;;
   esac
@@ -403,7 +407,7 @@ cmd_screen() {
 
   # The menu is drawn before any key is read; wait for anything to land on the
   # screen. A needle taken from the fixture's raw text cannot do this job: the
-  # menu draws each key through config.yaml's `symbols.keys`, so a fixture key
+  # menu draws each key through `config.symbols.keys`, so a fixture key
   # of `g` rendered as `★` would never match and a fully drawn menu would be
   # reported as one that never appeared. Every drawn menu — down to the bare
   # prompt glyph an empty binding set leaves — makes the capture non-empty.
@@ -483,7 +487,7 @@ cmd_widget() {
   # `zsh -d -i` reads $ZDOTDIR/.zshrc; `zsh -f` would set NO_RCS and read none.
   {
     echo "PS1='%% '"
-    # e2e/fixtures/widget.bindings.yaml binds `e` and `E` to $WK_TEST_VAR to
+    # e2e/fixtures/widget.yaml binds `e` and `E` to $WK_TEST_VAR to
     # contrast eval:true against a literal insert. That only says anything once
     # the variable holds something, so define it exactly as
     # e2e/tests/06_widget.bats does — otherwise `widget e` yields an empty
@@ -587,7 +591,7 @@ cmd_widget() {
   # changes the screen, whatever the fixture, the symbols, or the depth the
   # major leader jumps to.
   # saw_wk is the diagnosis below, kept separately from the readiness break: wk
-  # can open and then exit on its own (a config.yaml timeout does exactly that),
+  # can open and then exit on its own (a config.timeout does exactly that),
   # and a liveness probe taken afterwards would call that "never started".
   local w
   for ((w = 0; w < 60; w++)); do
