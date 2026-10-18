@@ -231,7 +231,7 @@ export const FileSchema = z.strictObject({
 })
 
 export type ContextInput = z.input<typeof ContextSchema>
-export type ConfigFile = { config?: ContextInput; bindings?: Binding[] }
+export type ConfigFile = Omit<z.input<typeof FileSchema>, 'bindings'> & { bindings?: Binding[] }
 
 // ---------------------------------------------------------------- parsing
 
@@ -247,6 +247,18 @@ function toReason(error: { issues: readonly { path: PropertyKey[]; message: stri
   return path === '' ? issue.message : `${path}: ${issue.message}`
 }
 
+// The sections `orAbsent` lets through as null, dropped so that the value is
+// what `ContextInput` says it is. Only a mapping can be null once the schema has
+// accepted it — a null scalar is rejected — so nothing else is touched.
+function dropNulls<T>(given: T): T {
+  if (typeof given !== 'object' || given === null || Array.isArray(given)) {
+    return given
+  }
+  return Object.fromEntries(
+    Object.entries(given).filter(([, value]) => value !== null).map(([key, value]) => [key, dropNulls(value)]),
+  ) as T
+}
+
 export function parseFile(given: unknown): ParseResult<ConfigFile> {
   const result = FileSchema.safeParse(given)
   if (!result.success) {
@@ -254,11 +266,28 @@ export function parseFile(given: unknown): ParseResult<ConfigFile> {
   }
   // `config` is handed back as written, not as parsed: filling in the defaults
   // here would let a local file's defaults overwrite what the global one set.
-  // The parse above has already vouched for it, and `run.ts` fills the defaults
-  // in once both files are merged.
+  // The parse above has already vouched for it, and `resolveContext` fills the
+  // defaults in once both files are merged.
   const { config } = given as { config?: ContextInput | null }
   // `BindingSchema` is annotated as an opaque `ZodMiniType` to break the
   // recursion between a group and its own items, so what comes back is untyped
   // even though it matched.
-  return { ok: true, value: { config: config ?? undefined, bindings: result.data.bindings as Binding[] | undefined } }
+  return {
+    ok: true,
+    value: {
+      config: config == null ? undefined : dropNulls(config),
+      bindings: result.data.bindings as Binding[] | undefined,
+    },
+  }
+}
+
+// Each file has passed on its own, but the merge is a new value, and a check
+// that spans fields could still reject it. Parsed through `FileSchema` so that
+// a rejection is reported with the same `config.` path as a single file's.
+export function resolveContext(given: ContextInput): ParseResult<Context> {
+  const result = FileSchema.safeParse({ config: given })
+  if (!result.success) {
+    return { ok: false, reason: toReason(result.error) }
+  }
+  return { ok: true, value: result.data.config ?? defaultContext }
 }
