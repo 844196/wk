@@ -24,7 +24,8 @@ description = 'Compile wk for a Bun target (e.g. bun-linux-x64) into dist/wk'
 usage = 'arg "<target>"'
 run = '''
 bun build --compile --minify --target="${usage_target:?}" \
-  --define WK_VERSION="\"${VERSION:-unknown}\"" \
+  --define BUILD_VERSION="\"${BUILD_VERSION:-unknown}\"" \
+  --define BUILD_TIME="\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"" \
   --outfile dist/wk src/wk.ts
 '''
 
