@@ -12,9 +12,7 @@ const MAX_SAFE = Number.MAX_SAFE_INTEGER
 
 const options = {
   io: 'input',
-  override: (
-    { zodSchema, jsonSchema }: { zodSchema: z.core.$ZodType; jsonSchema: Record<string, unknown> },
-  ) => {
+  override: ({ zodSchema, jsonSchema }: { zodSchema: z.core.$ZodType; jsonSchema: Record<string, unknown> }) => {
     // zod stamps the registry id it used to name the `$defs` entry, and spells
     // out the safe-integer bounds of every `z.int()`. Neither is worth
     // publishing.
@@ -31,7 +29,9 @@ const options = {
 // along in the next tarball.
 try {
   Deno.removeSync('dist/schemas', { recursive: true })
-} catch { /* nothing to clear */ }
+} catch {
+  /* nothing to clear */
+}
 Deno.mkdirSync('dist/schemas', { recursive: true })
 const path = 'dist/schemas/config.json'
 Deno.writeTextFileSync(path, `${JSON.stringify(z.toJSONSchema(FileSchema, options), null, 2)}\n`)

@@ -16,7 +16,10 @@ import { AbortError, ConfigError, KeyParseError, UndefinedKeyError } from './err
 // which the `<path>: ` prefix already carries.
 function summarize(e: unknown): string {
   const message = e instanceof Error ? e.message : String(e)
-  return message.split('\n')[0].replace(/: \w+ '.*'$/, '').replace(/:$/, '')
+  return message
+    .split('\n')[0]
+    .replace(/: \w+ '.*'$/, '')
+    .replace(/:$/, '')
 }
 
 // A missing file is the only silent fallback. Anything else — a syntax error, a
@@ -133,7 +136,9 @@ const keyCollator = new Intl.Collator('en', { numeric: true, caseFirst: 'upper' 
 function sortBindings(bindings: Binding[]): Binding[] {
   return [...firstByKey(bindings).values()]
     .toSorted((a, b) => keyCollator.compare(a.key, b.key) || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
-    .map((binding) => binding.type === 'bindings' ? { ...binding, bindings: sortBindings(binding.bindings) } : binding)
+    .map((binding) =>
+      binding.type === 'bindings' ? { ...binding, bindings: sortBindings(binding.bindings) } : binding,
+    )
 }
 
 export const runCommand = new Command()
@@ -226,7 +231,12 @@ For example, this simulates pressing "g", "p", and "f".`,
         Deno.exit(3)
       } else if (e instanceof UndefinedKeyError) {
         tui.close()
-        console.error(`"${e.getInputKeys().map((k) => getKeySymbol(defaultContext, k)).join(' ')}" is undefined`)
+        console.error(
+          `"${e
+            .getInputKeys()
+            .map((k) => getKeySymbol(defaultContext, k))
+            .join(' ')}" is undefined`,
+        )
         Deno.exit(5)
       } else if (e instanceof KeyParseError) {
         tui.close()

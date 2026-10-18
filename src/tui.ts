@@ -94,13 +94,7 @@ export class TUI {
   }
 
   clear(): void {
-    this.#tty.writeSync(
-      ansi
-        .cursorHide
-        .cursorLeft.eraseLine.text('\x1b[0J')
-        .cursorShow
-        .bytes(),
-    )
+    this.#tty.writeSync(ansi.cursorHide.cursorLeft.eraseLine.text('\x1b[0J').cursorShow.bytes())
   }
 
   close(): void {
@@ -114,13 +108,7 @@ export class TUI {
   }
 
   draw(promptLine: string, tableLines: string): void {
-    this.#tty.writeSync(
-      ansi
-        .cursorHide
-        .eraseLine.text('\x1b[0J')
-        .cursorLeft.text(promptLine)
-        .bytes(),
-    )
+    this.#tty.writeSync(ansi.cursorHide.eraseLine.text('\x1b[0J').cursorLeft.text(promptLine).bytes())
 
     this.#tty.writeSync(
       ansi
@@ -129,8 +117,7 @@ export class TUI {
         .text(tableLines)
         .cursorUp(tableLines.split('\n').length)
         .cursorLeft.cursorMove(stripAnsiCode(promptLine).length, 0)
-        .cursorShow
-        .bytes(),
+        .cursorShow.bytes(),
     )
   }
 
