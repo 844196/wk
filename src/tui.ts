@@ -141,7 +141,7 @@ export class TUI {
       `\n${ERASE_BELOW}${tableLines}` +
         cursorUp(tableLines.split('\n').length) +
         CURSOR_TO_LINE_START +
-        cursorRight(Bun.stripANSI(promptLine).length) +
+        cursorRight(Bun.stringWidth(promptLine)) +
         CURSOR_SHOW,
     )
   }

@@ -290,6 +290,25 @@ YAML
   assert_line --index 1 ' g :: @Git'
 }
 
+@test "the cursor rests after a full-width symbols.prompt, counted in columns" {
+  write_global <<'YAML'
+config:
+  symbols:
+    prompt: 'あ>'
+bindings:
+  - key: l
+    type: command
+    desc: List
+    buffer: ls -la
+YAML
+  start_wk_session
+  wait_for_screen 'List'
+
+  # あ takes two columns, so the cursor sits at column 3 (0-based), not 2.
+  run wk_tmux display-message -p '#{cursor_x}'
+  assert_output '3'
+}
+
 @test "up-one-line auto keeps the menu below a partially written line" {
   write_global <<'YAML'
 config:
