@@ -37,3 +37,6 @@ types:
 # deps: 依存関係
 # ci: CI/CD (.github/workflows/ 等)
 scopeRegex: '^(?:deps|ci)(?:,(?:deps|ci))*$'
+
+# リリースノートは GitHub が改行をそのまま表示するので、80 文字で折り返さない
+wrapDisabled: true
