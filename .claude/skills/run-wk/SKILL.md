@@ -23,7 +23,7 @@ driver はコンパイル済みバイナリだけを叩く。暗黙にビルド�
 ./.claude/skills/run-wk/driver.sh build   # → dist/wk-x86_64-unknown-linux-gnu, 1 秒未満
 ```
 
-`deno` は `mise install` で入るが、`tmux` / `zsh` / `script(1)` はホスト依存なので `screen` と `widget` の前に `command -v tmux zsh script pgrep`。
+`bun` は `mise install` で入るが、`tmux` / `zsh` / `script(1)` はホスト依存なので `screen` と `widget` の前に `command -v tmux zsh script pgrep`。
 
 環境変数と終了コードの一覧、`driver:` 行の意味は driver.sh 冒頭コメント (引数なし実行でも出る)。以下はそれを読んでも分からないことだけ。
 

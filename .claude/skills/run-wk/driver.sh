@@ -19,7 +19,7 @@
 #
 # Env:
 #   WK_BIN       binary to drive (default: dist/wk-$WK_TARGET)
-#   WK_TARGET    deno compile target (default: x86_64-unknown-linux-gnu)
+#   WK_TARGET    build target, as mise's build:internal names it (default: x86_64-unknown-linux-gnu)
 #   WK_CONFIG    global config.yaml to seed (default: e2e/fixtures/widget.yaml)
 #   WK_LOCAL     local wk.yaml to drop in the sandbox cwd (default: none)
 #   WK_ZSHRC     file of extra zsh lines appended to the widget layer's .zshrc
@@ -85,7 +85,7 @@ need_bin() {
     */*) bin="$(cd "${bin%/*}" && pwd)/${bin##*/}" || die "could not resolve $bin" ;;
     *)   bin="${PWD}/${bin}" ;;
   esac
-  # Resolve symlinks too. The widget layer invokes wk through Deno.execPath(),
+  # Resolve symlinks too. The widget layer invokes wk through process.execPath,
   # which canonicalizes, so a symlinked WK_BIN would never match in
   # wk_owns_keyboard and every diagnosis that function drives would flip to the
   # wrong branch — silently, since both branches print a plausible sentence.
@@ -239,7 +239,7 @@ wait_for_screen() {
   local needle="$1" i
   for ((i = 0; i < 100; i++)); do
     if tmx capture-pane -p 2>/dev/null | grep -qF -- "$needle"; then
-      # A crashing wk writes a Deno stack trace carrying the sandbox path before
+      # A crashing wk writes a stack trace carrying the sandbox path before
       # its pane dies, and a one-character needle can match inside it. Requiring
       # a live pane keeps that from being read as a drawn menu.
       pane_alive && return 0
