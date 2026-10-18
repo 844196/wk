@@ -1,5 +1,4 @@
 import { inspect, styleText } from 'node:util'
-import { border as defaultBorder, Table } from '@cliffy/table'
 import type { Binding, Color, Context } from './schema.ts'
 
 type Attr = Extract<Color, { attrs: unknown }>['attrs'][number]
@@ -43,10 +42,6 @@ export function renderPrompt(ctx: Context, givenKeys: string[]) {
   return `${prompt}${keys.join(color(ctx.symbols.breadcrumb, ctx.colors.breadcrumb))}${givenKeys.length > 0 ? ' ' : ''}`
 }
 
-const plainBorder = Object.entries(defaultBorder).reduce<Record<string, string>>((acc, [k]) => {
-  acc[k] = ''
-  return acc
-}, {})
 function renderTableRow(ctx: Context, binding: Binding) {
   const icon = typeof binding.icon === 'string' ? color(binding.icon, ctx.colors.bindingIcon) : ''
   const group = binding.type === 'bindings' ? color(ctx.symbols.group, ctx.colors.group) : ''
@@ -61,8 +56,15 @@ function renderTableRow(ctx: Context, binding: Binding) {
   return [color(getKeySymbol(ctx, binding.key), ctx.colors.bindingKey), `${icon}${group}${desc}`]
 }
 
+function padEnd(text: string, width: number) {
+  return text + ' '.repeat(width - Bun.stringWidth(text))
+}
+
 export function renderTable(ctx: Context, bindings: Binding[]) {
-  return Table.from(bindings.map((binding) => renderTableRow(ctx, binding)))
-    .border(true)
-    .chars({ ...plainBorder, middle: color(ctx.symbols.separator, ctx.colors.separator) })
+  const rows = bindings.map((binding) => renderTableRow(ctx, binding))
+  const keyWidth = Math.max(0, ...rows.map(([key]) => Bun.stringWidth(key)))
+  const descWidth = Math.max(0, ...rows.map(([, desc]) => Bun.stringWidth(desc)))
+  const separator = color(ctx.symbols.separator, ctx.colors.separator)
+
+  return rows.map(([key, desc]) => ` ${padEnd(key, keyWidth)} ${separator} ${padEnd(desc, descWidth)} `).join('\n')
 }

@@ -1,9 +1,16 @@
 import { openSync, readSync, writeSync } from 'node:fs'
 import { ReadStream } from 'node:tty'
-import { ansi } from '@cliffy/ansi'
-import { cursorPosition } from '@cliffy/ansi/ansi-escapes'
 import { keypress, KeyPressEvent } from '@cliffy/keypress'
 import { type KeyCode, parse as parseKeycode } from '@cliffy/keycode'
+
+const CURSOR_SHOW = '\x1b[?25h'
+const CURSOR_HIDE = '\x1b[?25l'
+const CURSOR_TO_LINE_START = '\x1b[G'
+const CURSOR_POSITION_QUERY = '\x1b[6n'
+const ERASE_LINE = '\x1b[2K'
+const ERASE_BELOW = '\x1b[0J'
+const cursorUp = (lines: number) => `\x1b[${lines}A`
+const cursorRight = (columns: number) => (columns > 0 ? `\x1b[${columns}C` : '')
 
 // biome-ignore lint/suspicious/noControlCharactersInRegex: ESC opens the terminal's reply.
 const CURSOR_POSITION_REPLY = /\x1b\[(\d+);(\d+)R/
@@ -68,7 +75,7 @@ export class TUI {
     }
 
     if (this.#upOneLine) {
-      this.#tty.writeSync(ansi.text('\n').bytes())
+      this.#write('\n')
     }
   }
 
@@ -81,7 +88,7 @@ export class TUI {
 
     this.#tty.setRaw(true)
     try {
-      this.#tty.writeSync(new TextEncoder().encode(cursorPosition))
+      this.#write(CURSOR_POSITION_QUERY)
 
       for (let reads = 0; reads < CURSOR_POSITION_READ_LIMIT; reads++) {
         const read = this.#tty.readSync(chunk)
@@ -110,35 +117,37 @@ export class TUI {
   }
 
   showCursor(): void {
-    this.#tty.writeSync(ansi.cursorShow.bytes())
+    this.#write(CURSOR_SHOW)
   }
 
   clear(): void {
-    this.#tty.writeSync(ansi.cursorHide.cursorLeft.eraseLine.text('\x1b[0J').cursorShow.bytes())
+    this.#write(CURSOR_HIDE + CURSOR_TO_LINE_START + ERASE_LINE + ERASE_BELOW + CURSOR_SHOW)
   }
 
   close(): void {
     this.clear()
 
     if (this.#upOneLine) {
-      this.#tty.writeSync(ansi.cursorUp.bytes())
+      this.#write(cursorUp(1))
     }
 
     this.showCursor()
   }
 
   draw(promptLine: string, tableLines: string): void {
-    this.#tty.writeSync(ansi.cursorHide.eraseLine.text('\x1b[0J').cursorLeft.text(promptLine).bytes())
+    this.#write(CURSOR_HIDE + ERASE_LINE + ERASE_BELOW + CURSOR_TO_LINE_START + promptLine)
 
-    this.#tty.writeSync(
-      ansi
-        .text('\n')
-        .text('\x1b[0J')
-        .text(tableLines)
-        .cursorUp(tableLines.split('\n').length)
-        .cursorLeft.cursorMove(Bun.stripANSI(promptLine).length, 0)
-        .cursorShow.bytes(),
+    this.#write(
+      `\n${ERASE_BELOW}${tableLines}` +
+        cursorUp(tableLines.split('\n').length) +
+        CURSOR_TO_LINE_START +
+        cursorRight(Bun.stripANSI(promptLine).length) +
+        CURSOR_SHOW,
     )
+  }
+
+  #write(text: string): void {
+    this.#tty.writeSync(new TextEncoder().encode(text))
   }
 
   async *keypress(): AsyncIterable<KeyPressEvent> {
