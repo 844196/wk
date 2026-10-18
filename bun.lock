@@ -8,7 +8,6 @@
         "@cliffy/command": "npm:@jsr/cliffy__command@1.0.0-rc.7",
         "@cliffy/keycode": "npm:@jsr/cliffy__keycode@1.0.0-rc.7",
         "@cliffy/keypress": "npm:@jsr/cliffy__keypress@1.0.0-rc.7",
-        "@std/yaml": "npm:@jsr/std__yaml@1.0.5",
         "eta": "3.5.0",
         "zod": "4.5.4",
       },
@@ -38,8 +37,6 @@
     "@jsr/std__regexp": ["@jsr/std__regexp@1.0.2", "https://npm.jsr.io/~/11/@jsr/std__regexp/1.0.2.tgz", {}, "sha512-wvJnzBWsPW4YLdAhCSggh4NyNia/qtzsuJr0kSYuqUBtvOU/RsI/WKB5lu7ehlzuZ5Sy+efr0ACyogCCZmw0YQ=="],
 
     "@jsr/std__text": ["@jsr/std__text@1.0.19", "https://npm.jsr.io/~/11/@jsr/std__text/1.0.19.tgz", { "dependencies": { "@jsr/std__regexp": "^1.0.2" } }, "sha512-OIXUoD4gty+GH+ZOpe7LT1jVr+31ctOoIoxBzLN1m3fvAOtqWyEz6Ap3NwDiuEgHpAIMz/O5L2SKDr0F2bChCA=="],
-
-    "@std/yaml": ["@jsr/std__yaml@1.0.5", "https://npm.jsr.io/~/11/@jsr/std__yaml/1.0.5.tgz", {}, "sha512-jbh2xwnja+ar+7NE0oDTlbST1WW29dAQOKX8+1DZgdT54NVt9lZ9YVDrzh4uP1w6ZHVirtY0z99BSym0v+Zh4Q=="],
 
     "@types/bun": ["@types/bun@1.4.3", "", { "dependencies": { "bun-types": "1.4.3" } }, "sha512-N67Pqy8JXbAY/j0tNraS3V5mubGvc6rrrNDmDCtZLlFzccbUJPDb0tvgUBC5q4m8ybkP93Jcn1QB+RYQ6PvBhw=="],
 
