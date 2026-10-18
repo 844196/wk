@@ -106,6 +106,21 @@ YAML
   assert_equal "$output" $'\t\tls -la'
 }
 
+@test "an unknown config field that refers to itself is left alone too" {
+  write_valid_bindings
+  # A YAML alias can loop back on itself; wk must not walk into it.
+  append_global <<'YAML'
+config:
+  extra: &loop
+    self: *loop
+YAML
+
+  wk_run --inputs 'l'
+
+  assert_equal "$status" 0
+  assert_equal "$output" $'\t\tls -la'
+}
+
 # --- bindings -------------------------------------------------------------
 
 @test "a container written with nothing under it falls back to the defaults" {
