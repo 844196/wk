@@ -1,5 +1,5 @@
 [tools]
-deno = '2.5.2'
+bun = '1.4.3'
 biome = '2.5.15'
 lefthook = "2.0.15"
 "github:convco/convco" = "0.6.2"
@@ -18,7 +18,7 @@ run = 'biome lint --error-on-warnings'
 
 [tasks.'check:type']
 depends = 'generate:version'
-run = 'deno check src/wk.ts scripts/generate-schemas.ts'
+run = 'bun run tsc'
 
 [tasks.'generate:version']
 run = 'echo "${VERSION:-unknown}" > VERSION'
@@ -32,13 +32,24 @@ depends = [
 ]
 
 [tasks.'build:internal']
-depends = 'bundle'
-run = 'deno compile --allow-all --target {{arg(name="target")}} --output dist/wk-{{arg(name="target")}} dist/wk.bundle.js'
+depends = 'generate:version'
+run = '''
+set -eu
+target='{{arg(name="target")}}'
+case "${target}" in
+  x86_64-unknown-linux-gnu) bun_target=bun-linux-x64 ;;
+  aarch64-unknown-linux-gnu) bun_target=bun-linux-arm64 ;;
+  x86_64-apple-darwin) bun_target=bun-darwin-x64 ;;
+  aarch64-apple-darwin) bun_target=bun-darwin-arm64 ;;
+  *) echo "unknown target: ${target}" >&2; exit 1 ;;
+esac
+bun build --compile --minify --target="${bun_target}" --outfile "dist/wk-${target}" src/wk.ts
+'''
 hide = true
 
 [tasks.'generate:schemas']
 description = 'Generate the distributable JSON Schemas from src/schema.ts'
-run = 'deno run --allow-write=dist scripts/generate-schemas.ts'
+run = 'bun scripts/generate-schemas.ts'
 
 [tasks.dist]
 description = 'Package a target into dist/wk-<target>.tar.gz with its schemas and LICENSE'
@@ -56,10 +67,6 @@ cp -R dist/schemas "${stage}/schemas"
 tar -czf "dist/wk-${target}.tar.gz" -C dist/pkg "wk-${target}"
 rm -rf dist/pkg
 '''
-
-[tasks.bundle]
-depends = 'generate:version'
-run = 'deno bundle --minify --output dist/wk.bundle.js src/wk.ts'
 
 [tasks.e2e]
 description = 'Build the binary for WK_E2E_TARGET and run the e2e suite'

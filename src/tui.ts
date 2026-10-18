@@ -1,3 +1,5 @@
+import { openSync, readSync, writeSync } from 'node:fs'
+import { ReadStream } from 'node:tty'
 import { ansi } from '@cliffy/ansi'
 import { cursorPosition } from '@cliffy/ansi/ansi-escapes'
 import { keypress, KeyPressEvent } from '@cliffy/keypress'
@@ -28,13 +30,32 @@ function parseTypeAhead(input: string): KeyCode[] {
   }
 }
 
+// The tty is opened on its own fd rather than taken from stdin, so the cursor
+// position query and the drawing never touch what cliffy reads keys from.
+export interface Tty {
+  setRaw(mode: boolean): void
+  readSync(buffer: Uint8Array): number | null
+  writeSync(data: Uint8Array): number
+}
+
+export function openTty(path = '/dev/tty'): Tty {
+  const fd = openSync(path, 'r+')
+  // Only for setRawMode (tcsetattr on fd); the stream is never read, so it never competes for input.
+  const stream = new ReadStream(fd)
+  return {
+    setRaw: (mode) => void stream.setRawMode(mode),
+    readSync: (buffer) => readSync(fd, buffer),
+    writeSync: (data) => writeSync(fd, data),
+  }
+}
+
 export class TUI {
-  #tty: Deno.FsFile
+  #tty: Tty
   #inputs: string[]
   #upOneLine: boolean = false
   #typeAhead: string = ''
 
-  constructor(tty: Deno.FsFile, inputs: string[]) {
+  constructor(tty: Tty, inputs: string[]) {
     this.#tty = tty
     this.#inputs = inputs
   }
@@ -135,7 +156,8 @@ export class TUI {
       yield new KeyPressEvent('keydown', keycode)
     }
 
-    for await (const key of keypress()) {
+    // npm.jsr.io's generated mod.d.ts drops Keypress's [Symbol.asyncIterator], though mod.js has it.
+    for await (const key of keypress() as unknown as AsyncIterable<KeyPressEvent>) {
       if (key.sequence !== undefined && CURSOR_POSITION_REPLY_KEY.test(key.sequence)) {
         continue
       }
