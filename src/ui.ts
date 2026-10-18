@@ -1,6 +1,8 @@
 import { inspect, styleText } from 'node:util'
 import type { Binding, Color, Context } from './schema.ts'
 
+const FOREGROUND_RESET = '\x1b[39m'
+
 type Attr = Extract<Color, { attrs: unknown }>['attrs'][number]
 
 // bold and dim share their reset, so an inner reset is turned back into this
@@ -12,6 +14,12 @@ function attribute(text: string, attr: Attr) {
   return styleText(attr, text.replaceAll(`\x1b[${close}m`, `\x1b[${open}m`), { validateStream: false })
 }
 
+// A foreground reset inside the text (from an escape in a desc, say) would end
+// this color early, so it is turned back into this color's code.
+function foreground(text: string, open: string) {
+  return `${open}${text.replaceAll(FOREGROUND_RESET, open)}${FOREGROUND_RESET}`
+}
+
 function color(text: string, givenColor: Color) {
   const ansi256 = typeof givenColor === 'number' || typeof givenColor === 'string' ? givenColor : givenColor.color
   const attrs = typeof givenColor === 'number' || typeof givenColor === 'string' ? [] : givenColor.attrs
@@ -19,9 +27,7 @@ function color(text: string, givenColor: Color) {
   const colorized =
     ansi256 === -1
       ? text
-      : typeof ansi256 === 'string'
-        ? `${Bun.color(ansi256, 'ansi-16m')}${text}\x1b[39m`
-        : `\x1b[38;5;${ansi256}m${text}\x1b[39m`
+      : foreground(text, typeof ansi256 === 'string' ? (Bun.color(ansi256, 'ansi-16m') ?? '') : `\x1b[38;5;${ansi256}m`)
 
   return attrs.reduce(attribute, colorized)
 }
