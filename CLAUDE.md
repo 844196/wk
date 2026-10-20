@@ -4,7 +4,7 @@ zsh向けのwhich-keyライクメニュー。Bun製CLI (`src/wk.ts`) と、そ�
 
 ## runとwidget の契約
 
-`wk run` はTUIを `/dev/tty` に描き、選ばれた結果だけを標準出力に出す。それを `_wk_widget` が読んで `BUFFER` へ差し込む。この受け渡しは `src/run.ts` と `src/widget.eta` の間の契約で、片方だけ変えると壊れる。
+`wk run` はTUIを `/dev/tty` に描き、選ばれた結果だけを標準出力に出す。それを `_wk_widget` が読んで `BUFFER` へ差し込む。この受け渡しは `src/run.ts` (出力の組み立ては `src/output.ts` の `formatOutput`) と `src/widget.eta` の間の契約で、片方だけ変えると壊れる。
 
 - 出力形式: 先頭1文字が区切り文字、以降はその区切り文字で連結された `buffer` + `key:value` 列 (`eval:true`, `accept:true` など)。区切り文字はbindingの `delimiter`、無ければconfigの `outputDelimiter`。
 - 終了コード: 0成功/3中断/4タイムアウト/5未定義キー/6キーパース失敗/7設定ファイル不正。`widget.eta` の `case` がこれで分岐し、それ以外は `zle -M` でエラー表示に回る。
@@ -15,7 +15,7 @@ zsh向けのwhich-keyライクメニュー。Bun製CLI (`src/wk.ts`) と、そ�
 `key`/`desc`/`buffer` などのフィールドを増減させたら、触るのは `src/schema.ts` と `README.md` の設定例だけ。
 
 - `src/schema.ts` — `zod/mini` のスキーマ。型 (`Binding`/`Command`/`Context`/`Color`) は `z.infer` で導出、既定値は `z._default`/`z.prefault` が持ち、`defaultContext` は `ContextSchema.parse({})`。手書きの型定義は無い。
-- 設定ファイルはglobalの `$XDG_CONFIG_HOME/wk/config.ya?ml` とlocalの `$PWD/wk.ya?ml` の2つで、どちらも `FileSchema` (`config:` + `bindings:`、トップレベルはstrict) の同じ形。`.yaml` があれば `.yml` は読まない。localの `config:` は `run.ts` の `mergeContext` でフィールド単位に重ね、既定値はマージの後で `resolveContext` が埋める — 各ファイルの段階で埋めるとlocalの既定値がglobalの値を消す。
+- 設定ファイルはglobalの `$XDG_CONFIG_HOME/wk/config.ya?ml` とlocalの `$PWD/wk.ya?ml` の2つで、どちらも `FileSchema` (`config:` + `bindings:`、トップレベルはstrict) の同じ形。`.yaml` があれば `.yml` は読まない。読み込みと重ね合わせは `src/config.ts` の `loadConfig` で、localの `config:` は `mergeContext` でフィールド単位に重ね、既定値はマージの後で `resolveContext` が埋める — 各ファイルの段階で埋めるとlocalの既定値がglobalの値を消す。
 - 配布用JSON Schemaはコミットしていない。`mise run generate:schemas` が両ファイル共通の `dist/schemas/config.json` を吐き、`mise run dist <name>` が `dist/wk` と一緒にリリースtarball (`<name>/{wk,LICENSE,schemas/}`) に詰める。生成は `io: 'input'` — ユーザーが書ける形を出す。
 - `zod/mini` はロケールを積まないので、`error` を渡し忘れた検査は `Invalid input` になる。フィールドを足したら必ず `expected(...)` を渡し、既存の入力を一通り流して `Invalid input` が出ないことを見る。
 - 設定エラーは `<ファイル>: <パス>: <期待>` の1行で exit 7。パスはzodのissueの `path` から `bindings[0].bindings[0].key` / `config.colors.prompt` の形に組む。
@@ -27,7 +27,7 @@ zsh向けのwhich-keyライクメニュー。Bun製CLI (`src/wk.ts`) と、そ�
 
 e2eテストが `e2e/` にある。`mise run e2e` でバイナリをビルドしてから走らせ、`mise run e2e:only` は `dist/` の既存バイナリをそのまま使う (パスを渡せば1ファイルだけ — `mise run e2e:only e2e/tests/06_widget.bats`)。`exec format error` は `WK_E2E_TARGET` とバイナリのアーキ不一致。Docker (zsh/tmux/bats-core、ランタイムは入れない) の中でbats-coreを回し、対象バイナリは `WK_BIN` で受け取る黒箱テスト。ランタイムを替えても受け入れ仕様として使い回せるよう、テスト側からBunを参照しないこと。層は3つ — `script(1)` でptyを張ってCLIを直叩き (`helpers/common.bash` の `wk_run`)、TTY不要の `wk init`、tmuxで実zshウィジェットを動かす (`helpers/tmux.bash`)。
 
-単体・統合テストはVitestで、対象モジュールの隣に `src/<module>.test.ts` として置く。`mise run test` (watchは `mise run test:watch`) で走り、CIでは `check`・`e2e` と別の `test` ジョブ。中身は `bun --bun vitest` — `--bun` 無しだとVitestがNodeで動き、`Bun.YAML` などで `Bun is not defined` になる。`widget.eta` の text import は `vitest.config.ts` の小さなプラグインが文字列にしている。純粋関数で確かめられること (スキーマのエラー文言、描画、キー入力ループ、偽の `Tty` を渡した `TUI`) はVitestに書き、e2eはプロセス境界の契約 (終了コード・stdoutの形式・設定ファイルの探索・TTY・zshウィジェット) の代表ケースを受け持つ。
+単体・統合テストはVitestで、対象モジュールの隣に `src/<module>.test.ts` として置く。`mise run test` (watchは `mise run test:watch`) で走り、CIでは `check`・`e2e` と別の `test` ジョブ。中身は `bun --bun vitest` — `--bun` 無しだとVitestがNodeで動き、`Bun.YAML` などで `Bun is not defined` になる。`widget.eta` の text import は `vitest.config.ts` の小さなプラグインが文字列にしている。純粋関数や一時ディレクトリで確かめられること (スキーマのエラー文言、設定ファイルの読み込み・マージ・並び順、出力形式、描画、キー入力ループ、偽の `Tty` を渡した `TUI`) はVitestに書き、e2eはプロセス境界の契約 (終了コード・stdoutの形式・設定ファイルの探索・TTY・zshウィジェット) の代表ケースを受け持つ。
 
 実行しての確認は `.claude/skills/run-wk/` の run-wk スキルにまとめてある。`driver.sh` が使い捨ての `HOME`/`XDG_CONFIG_HOME`/`ZDOTDIR` の中で、`keys` (pty直叩き)・`screen` (tmuxで描画)・`widget` (実zsh) の3層を叩き分ける。手で組み直す必要は無いので、そちらを読む。`wk init` が埋め込むパスは `process.execPath` なので `bun run` 経由だとbun自身のパスが入る — ウィジェットを見るならビルドしたバイナリで。
 
