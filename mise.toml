@@ -19,6 +19,16 @@ run = 'biome lint --error-on-warnings'
 [tasks.'check:type']
 run = 'bun run tsc'
 
+# `--bun` keeps Vitest on Bun: under Node the `Bun` global the sources use is
+# undefined.
+[tasks.test]
+description = 'Run the unit and integration tests'
+run = 'bun --bun vitest run'
+
+[tasks.'test:watch']
+description = 'Run the unit and integration tests in watch mode'
+run = 'bun --bun vitest'
+
 [tasks.build]
 description = 'Compile wk for a Bun target (e.g. bun-linux-x64) into dist/wk'
 usage = 'arg "<target>"'
