@@ -1,7 +1,8 @@
 #!/usr/bin/env bats
 #
 # Exit codes are the other half of the widget contract: `_wk_widget` switches on
-# them and falls back to `zle -M` for anything unexpected.
+# them and falls back to `zle -M` for anything unexpected. Which keys abort or
+# fail is in src/main.test.ts; this covers how that becomes an exit code.
 
 setup() {
   load '../helpers/common'
@@ -22,13 +23,6 @@ setup() {
   assert_equal "$output" ''
 }
 
-@test "ctrl-c aborts with 3" {
-  wk_run --inputs '\x03'
-
-  assert_equal "$status" 3
-  assert_equal "$output" ''
-}
-
 @test "an undefined key exits 5 and reports the whole key sequence on stderr" {
   wk_run --inputs 'g z'
 
@@ -36,37 +30,6 @@ setup() {
   assert_equal "$output" ''
   # Note: the keys are joined by a plain space, not by symbols.breadcrumb.
   assert_equal "$stderr" '"g z" is undefined'
-}
-
-@test "an undefined key at the root reports just that key" {
-  wk_run --inputs 'z'
-
-  assert_equal "$status" 5
-  assert_equal "$stderr" '"z" is undefined'
-}
-
-@test "ctrl-d aborts with 3" {
-  wk_run --inputs '\x04'
-
-  assert_equal "$status" 3
-}
-
-@test "backspace at the root aborts with 3" {
-  wk_run --inputs '\x7f'
-
-  assert_equal "$status" 3
-}
-
-@test "ctrl-u at the root aborts with 3" {
-  wk_run --inputs '\x15'
-
-  assert_equal "$status" 3
-}
-
-@test "ctrl-w at the root aborts with 3" {
-  wk_run --inputs '\x17'
-
-  assert_equal "$status" 3
 }
 
 @test "running out of input exits 4 once the configured timeout elapses" {
