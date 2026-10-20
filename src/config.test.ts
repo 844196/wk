@@ -1,7 +1,7 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join as joinPath } from 'node:path'
-import { beforeEach, describe, expect, test } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { loadConfig, loadYaml, mergeBindings, mergeContext, sortBindings, summarize } from './config.ts'
 import { ConfigError } from './errors.ts'
 import { type Binding, defaultContext, parseFile } from './schema.ts'
@@ -9,6 +9,9 @@ import { type Binding, defaultContext, parseFile } from './schema.ts'
 let dir: string
 beforeEach(() => {
   dir = mkdtempSync(joinPath(tmpdir(), 'wk-test-'))
+})
+afterEach(() => {
+  rmSync(dir, { recursive: true, force: true })
 })
 
 function write(name: string, yaml: string) {
