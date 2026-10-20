@@ -1,6 +1,14 @@
 import { readFile } from 'node:fs/promises'
 import { ConfigError } from './errors.ts'
-import { type Binding, type Context, type ContextInput, type ParseResult, parseFile, resolveContext } from './schema.ts'
+import {
+  type Binding,
+  type Context,
+  type ContextInput,
+  defaultContext,
+  type ParseResult,
+  parseFile,
+  resolveContext,
+} from './schema.ts'
 import { getKeySymbol } from './ui.ts'
 
 // Only the first line of a message fits `zle -M`, and a trailing colon would
@@ -18,29 +26,48 @@ export function summarize(e: unknown): string {
     .replace(/:$/, '')
 }
 
-// A missing file is the only silent fallback. Anything else — a syntax error, a
-// shape mismatch, EACCES, EISDIR — stops wk, so that a typo cannot quietly
-// change how it behaves.
-//
+// One configuration file to read: the first of `candidates` that exists. A
+// file the user named is `required`, and its absence is an error like any
+// other, so that a mistyped path cannot quietly fall back to an empty layer.
+export type ConfigFile = { candidates: string[]; required: boolean }
+
 // `<base>.yaml` is read in preference to `<base>.yml`, the order docker compose
 // uses. Having both is not reported: on success wk's stderr has nowhere to go.
+export function defaultFile(base: string): ConfigFile {
+  return { candidates: [`${base}.yaml`, `${base}.yml`], required: false }
+}
+
+// A named path is read as written, with no extension tried after it.
+export function givenFile(path: string): ConfigFile {
+  return { candidates: [path], required: true }
+}
+
+// `--config` replaces both default files rather than adding to them: a caller
+// that names its files is the one deciding what the menu holds.
+export function configFiles(given: string[], defaults: { globalBase: string; localBase: string }): ConfigFile[] {
+  return given.length > 0 ? given.map(givenFile) : [defaultFile(defaults.globalBase), defaultFile(defaults.localBase)]
+}
+
+// A missing default file is the only silent fallback. Anything else — a syntax
+// error, a shape mismatch, EACCES, EISDIR — stops wk, so that a typo cannot
+// quietly change how it behaves.
 //
-// The path that was read comes back with the value, or undefined if neither
-// file exists.
+// The path that was read comes back with the value, or undefined if no
+// candidate exists.
 export async function loadYaml<T>(
-  base: string,
+  file: ConfigFile,
   fallback: T,
   parse: (given: unknown) => ParseResult<T>,
 ): Promise<{ path: string | undefined; value: T }> {
   let path = ''
   let text: string | undefined
-  for (const extension of ['yaml', 'yml']) {
-    path = `${base}.${extension}`
+  for (const candidate of file.candidates) {
+    path = candidate
     try {
       text = await readFile(path, 'utf8')
       break
     } catch (e: unknown) {
-      if ((e as NodeJS.ErrnoException).code !== 'ENOENT') {
+      if (file.required || (e as NodeJS.ErrnoException).code !== 'ENOENT') {
         throw new ConfigError(path, summarize(e))
       }
     }
@@ -139,31 +166,29 @@ export function sortBindings(ctx: Context, bindings: Binding[]): Binding[] {
     )
 }
 
-// Each base names one configuration file, without its extension, and the files
-// are layered in the order given: a later one overrides an earlier one, by the
-// rules of `mergeContext` and `mergeBindings`. They are read one at a time, so
-// that the first broken file is the one reported and the rest are left
-// untouched.
-export async function loadConfig(bases: string[]): Promise<{ ctx: Context; bindings: Binding[] }> {
+// The files are layered in the order given: a later one overrides an earlier
+// one, by the rules of `mergeContext` and `mergeBindings`. They are read one at
+// a time, so that the first broken file is the one reported and the rest are
+// left untouched.
+export async function loadConfig(files: ConfigFile[]): Promise<{ ctx: Context; bindings: Binding[] }> {
   let config: ContextInput = {}
   let bindings: Binding[] = []
-  let lastPath: string | undefined
-  for (const base of bases) {
-    const file = await loadYaml(base, {}, parseFile)
-    config = mergeContext(config, file.value.config ?? {})
-    bindings = mergeBindings(bindings, file.value.bindings ?? [])
-    lastPath = file.path ?? lastPath
+  let ctx = defaultContext
+  for (const file of files) {
+    const loaded = await loadYaml(file, {}, parseFile)
+    config = mergeContext(config, loaded.value.config ?? {})
+    bindings = mergeBindings(bindings, loaded.value.bindings ?? [])
+
+    // The defaults are filled in after each merge rather than per file, so
+    // that a default never stands in for a value an earlier file set. Every
+    // file has passed on its own, so a merge that fails is the doing of the
+    // file just laid on, and checking after each one is what names it.
+    const resolved = resolveContext(config)
+    if (!resolved.ok) {
+      throw new ConfigError(loaded.path ?? file.candidates[0], resolved.reason)
+    }
+    ctx = resolved.value
   }
 
-  // The defaults are filled in after the merge, so that a default never
-  // stands in for a value an earlier file set.
-  const ctx = resolveContext(config)
-  if (!ctx.ok) {
-    // Every file has passed on its own, so a merge that fails is the doing of
-    // the last one read. With a single file the merge is that file as it was,
-    // which cannot fail here.
-    throw new ConfigError(lastPath ?? `${bases[0]}.yaml`, ctx.reason)
-  }
-
-  return { ctx: ctx.value, bindings: sortBindings(ctx.value, bindings) }
+  return { ctx, bindings: sortBindings(ctx, bindings) }
 }
