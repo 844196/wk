@@ -65,6 +65,13 @@ assert_valid_zsh() {
   assert_valid_zsh "$output"
 }
 
+@test "the major prefix defaults to m" {
+  run "$WK_BIN" init
+
+  assert_success
+  assert_output --partial "zle _wk_widget -- --inputs 'm'"
+}
+
 @test "a single quote leader is quoted with double quotes" {
   run "$WK_BIN" init --leader "'"
 
