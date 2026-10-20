@@ -1,7 +1,8 @@
 #!/usr/bin/env bats
 #
 # The stdout protocol between `wk run` and the zsh widget. Both sides have to
-# agree byte for byte, so these assertions are deliberately literal.
+# agree byte for byte, so these assertions are deliberately literal. Each field's
+# handling is in src/output.test.ts.
 
 setup() {
   load '../helpers/common'
@@ -20,70 +21,6 @@ setup() {
   assert_equal "$(cat -A "$wk_stdout_file")" '^I^Igit push^Ieval:true$'
 }
 
-@test "key, desc, icon and type are stripped from the output" {
-  write_global <<'YAML'
-bindings:
-  - key: l
-    type: command
-    desc: List
-    icon: LS
-    buffer: ls -la
-YAML
-
-  wk_run --inputs 'l'
-
-  assert_equal "$status" 0
-  assert_equal "$output" $'\t\tls -la'
-}
-
-@test "boolean fields are emitted as key:value" {
-  write_global <<'YAML'
-bindings:
-  - key: l
-    type: command
-    buffer: ls -la
-    eval: true
-    accept: true
-YAML
-
-  wk_run --inputs 'l'
-
-  assert_equal "$status" 0
-  assert_equal "$output" $'\t\tls -la\teval:true\taccept:true'
-}
-
-@test "false is emitted explicitly rather than omitted" {
-  write_global <<'YAML'
-bindings:
-  - key: l
-    type: command
-    buffer: ls -la
-    eval: false
-YAML
-
-  wk_run --inputs 'l'
-
-  assert_equal "$status" 0
-  assert_equal "$output" $'\t\tls -la\teval:false'
-}
-
-@test "config outputDelimiter replaces the tab" {
-  write_global <<'YAML'
-config:
-  outputDelimiter: ','
-bindings:
-  - key: l
-    type: command
-    buffer: ls -la
-    eval: true
-YAML
-
-  wk_run --inputs 'l'
-
-  assert_equal "$status" 0
-  assert_equal "$output" ',,ls -la,eval:true'
-}
-
 @test "a binding delimiter wins over config outputDelimiter and is not emitted itself" {
   write_global <<'YAML'
 config:
@@ -100,49 +37,6 @@ YAML
 
   assert_equal "$status" 0
   assert_equal "$output" '||ls -la|eval:true'
-}
-
-@test "an arbitrary string field is passed through as key:value" {
-  write_global <<'YAML'
-bindings:
-  - key: l
-    type: command
-    buffer: ls -la
-    note: hello world
-YAML
-
-  wk_run --inputs 'l'
-
-  assert_equal "$status" 0
-  assert_equal "$output" $'\t\tls -la\tnote:hello world'
-}
-
-@test "an empty buffer still produces the two leading delimiters" {
-  write_global <<'YAML'
-bindings:
-  - key: l
-    type: command
-    buffer: ''
-YAML
-
-  wk_run --inputs 'l'
-
-  assert_equal "$status" 0
-  assert_equal "$(cat -A "$wk_stdout_file")" '^I^I$'
-}
-
-@test "a multibyte buffer survives unchanged" {
-  write_global <<'YAML'
-bindings:
-  - key: l
-    type: command
-    buffer: 'echo こんにちは'
-YAML
-
-  wk_run --inputs 'l'
-
-  assert_equal "$status" 0
-  assert_equal "$output" $'\t\techo こんにちは'
 }
 
 @test "a buffer containing the delimiter is split, so the binding picks another one" {
