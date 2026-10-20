@@ -2,7 +2,16 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join as joinPath } from 'node:path'
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
-import { loadConfig, loadYaml, mergeBindings, mergeContext, sortBindings, summarize } from './config.ts'
+import {
+  defaultFile,
+  givenFile,
+  loadConfig,
+  loadYaml,
+  mergeBindings,
+  mergeContext,
+  sortBindings,
+  summarize,
+} from './config.ts'
 import { ConfigError } from './errors.ts'
 import { type Binding, defaultContext, parseFile } from './schema.ts'
 
@@ -21,6 +30,7 @@ function write(name: string, yaml: string) {
 }
 
 const base = (name: string) => joinPath(dir, name)
+const defaults = () => [defaultFile(base('config')), defaultFile(base('wk'))]
 
 async function configError(promise: Promise<unknown>): Promise<{ path: string; detail: string }> {
   const error = await promise.then(
@@ -56,14 +66,14 @@ describe('summarize', () => {
 
 describe('loadYaml', () => {
   test('a missing file falls back without a path', async () => {
-    const { path, value } = await loadYaml(base('config'), FALLBACK, parseFile)
+    const { path, value } = await loadYaml(defaultFile(base('config')), FALLBACK, parseFile)
     expect(path).toBeUndefined()
     expect(value).toBe(FALLBACK)
   })
 
   test('.yaml is read when there is no .yml', async () => {
     const path = write('config.yaml', 'bindings:\n  - key: l\n    type: command\n    buffer: ls\n')
-    expect(await loadYaml(base('config'), {}, parseFile)).toEqual({
+    expect(await loadYaml(defaultFile(base('config')), {}, parseFile)).toEqual({
       path,
       value: { config: undefined, bindings: [command('l', 'ls')] },
     })
@@ -71,13 +81,13 @@ describe('loadYaml', () => {
 
   test('.yml is read when there is no .yaml', async () => {
     const path = write('config.yml', 'bindings:\n  - key: l\n    type: command\n    buffer: ls\n')
-    expect((await loadYaml(base('config'), {}, parseFile)).path).toBe(path)
+    expect((await loadYaml(defaultFile(base('config')), {}, parseFile)).path).toBe(path)
   })
 
   test('.yaml wins over .yml, which is not read at all', async () => {
     const path = write('config.yaml', 'bindings: []\n')
     write('config.yml', 'not: [valid')
-    expect(await loadYaml(base('config'), {}, parseFile)).toEqual({
+    expect(await loadYaml(defaultFile(base('config')), {}, parseFile)).toEqual({
       path,
       value: { config: undefined, bindings: [] },
     })
@@ -91,12 +101,12 @@ describe('loadYaml', () => {
     ['a tilde', '~\n'],
   ])('a file holding %s is read as the fallback, with its path', async (_, yaml) => {
     const path = write('config.yaml', yaml)
-    expect(await loadYaml(base('config'), FALLBACK, parseFile)).toEqual({ path, value: FALLBACK })
+    expect(await loadYaml(defaultFile(base('config')), FALLBACK, parseFile)).toEqual({ path, value: FALLBACK })
   })
 
   test('a YAML syntax error names the file', async () => {
     const path = write('config.yaml', 'bindings:\n  - key: l\n     type: command\n')
-    const { path: reported, detail } = await configError(loadYaml(base('config'), {}, parseFile))
+    const { path: reported, detail } = await configError(loadYaml(defaultFile(base('config')), {}, parseFile))
     expect(reported).toBe(path)
     expect(detail).not.toBe('')
     expect(detail).not.toContain('\n')
@@ -104,7 +114,7 @@ describe('loadYaml', () => {
 
   test('a shape mismatch names the file and the reason', async () => {
     const path = write('config.yaml', 'bindings: {}\n')
-    expect(await configError(loadYaml(base('config'), {}, parseFile))).toEqual({
+    expect(await configError(loadYaml(defaultFile(base('config')), {}, parseFile))).toEqual({
       path,
       detail: 'bindings: expected a list of bindings',
     })
@@ -113,9 +123,22 @@ describe('loadYaml', () => {
   test('a directory in place of .yaml stops, rather than falling through to .yml', async () => {
     mkdirSync(joinPath(dir, 'config.yaml'))
     write('config.yml', 'bindings: []\n')
-    const { path, detail } = await configError(loadYaml(base('config'), {}, parseFile))
+    const { path, detail } = await configError(loadYaml(defaultFile(base('config')), {}, parseFile))
     expect(path).toBe(joinPath(dir, 'config.yaml'))
     expect(detail).toContain('directory')
+  })
+
+  test('a given path is read as written, with no extension tried after it', async () => {
+    write('tmux.yaml', 'bindings: []\n')
+    expect((await configError(loadYaml(givenFile(base('tmux')), {}, parseFile))).path).toBe(base('tmux'))
+  })
+
+  test('a given path may have any extension, or none', async () => {
+    const path = write('tmux', 'bindings:\n  - key: l\n    type: command\n    buffer: ls\n')
+    expect(await loadYaml(givenFile(path), {}, parseFile)).toEqual({
+      path,
+      value: { config: undefined, bindings: [command('l', 'ls')] },
+    })
   })
 })
 
@@ -213,7 +236,7 @@ describe('sortBindings', () => {
 
 describe('loadConfig', () => {
   test('with no files there are the defaults and no bindings', async () => {
-    expect(await loadConfig([base('config'), base('wk')])).toEqual({ ctx: defaultContext, bindings: [] })
+    expect(await loadConfig(defaults())).toEqual({ ctx: defaultContext, bindings: [] })
   })
 
   test('the files are layered in order, and the result is sorted', async () => {
@@ -225,14 +248,14 @@ describe('loadConfig', () => {
       'wk.yaml',
       'bindings:\n  - { key: g, type: command, buffer: local }\n  - { key: i, type: command, buffer: info }\n',
     )
-    const { bindings } = await loadConfig([base('config'), base('wk')])
+    const { bindings } = await loadConfig(defaults())
     expect(bindings.map((b) => b.type === 'command' && b.buffer)).toEqual(['local', 'info', 'ls'])
   })
 
   test('a later file does not put the defaults back over an earlier file', async () => {
     write('config.yaml', 'config:\n  timeout: 500\n  colors:\n    prompt: 1\n')
     write('wk.yaml', 'config:\n  colors:\n    group: 2\n')
-    const { ctx } = await loadConfig([base('config'), base('wk')])
+    const { ctx } = await loadConfig(defaults())
     expect(ctx.timeout).toBe(500)
     expect(ctx.colors.prompt).toBe(1)
     expect(ctx.colors.group).toBe(2)
@@ -242,12 +265,12 @@ describe('loadConfig', () => {
   test('the first broken file is the one reported', async () => {
     const path = write('config.yaml', 'bindings: {}\n')
     write('wk.yaml', 'nonsense: [')
-    expect((await configError(loadConfig([base('config'), base('wk')]))).path).toBe(path)
+    expect((await configError(loadConfig(defaults()))).path).toBe(path)
   })
 
   test('an empty later file leaves the earlier one alone', async () => {
     write('config.yaml', 'bindings:\n  - { key: l, type: command, buffer: ls }\n')
     write('wk.yaml', '')
-    expect(keys((await loadConfig([base('config'), base('wk')])).bindings)).toEqual(['l'])
+    expect(keys((await loadConfig(defaults())).bindings)).toEqual(['l'])
   })
 })

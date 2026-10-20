@@ -24,18 +24,25 @@ export const runCommand = new Command()
   .type('boolOrAuto', new EnumType(['true', 'false', 'auto']))
   .option('--up-one-line [VALUE:boolOrAuto]', 'Whether to move the input up one line.', { default: 'auto' })
   .option('--inputs <KEYS:string>', '(Experimental) Simulate input keys.')
+  .option('-c, --config <FILE:file>', 'Read FILE instead of the global and local files. Repeat to layer files.', {
+    collect: true,
+  })
   .example('wk run', 'Run.')
+  .example(
+    'wk run -c ~/.config/wk/config.yaml -c ~/.config/wk/tmux.yaml',
+    'Run with only these files, the later one laid over the earlier one.',
+  )
   .example(
     "wk run --inputs 'g p f'",
     `Run with simulated input keys. (Space separated)
 For example, this simulates pressing "g", "p", and "f".`,
   )
-  .action(async ({ upOneLine, inputs }) => {
+  .action(async ({ upOneLine, inputs, config }) => {
     // Loaded here rather than at the top of the file: pulling in the schema
     // costs a few milliseconds, and `wk init` — which runs from `.zshrc` on
     // every new shell — has no configuration to validate.
     const { defaultContext } = await import('./schema.ts')
-    const { loadConfig } = await import('./config.ts')
+    const { configFiles, loadConfig } = await import('./config.ts')
 
     const tty = openTty()
     const tui = new TUI(tty, inputs === undefined ? [] : inputs.split(' ').map(unescapeAnsi))
@@ -43,7 +50,12 @@ For example, this simulates pressing "g", "p", and "f".`,
     try {
       tui.init(upOneLine === true ? true : upOneLine === 'true' ? true : upOneLine === 'false' ? false : 'auto')
 
-      const { ctx, bindings } = await loadConfig([joinPath(WK_CONFIG_HOME, 'config'), joinPath(process.cwd(), 'wk')])
+      const { ctx, bindings } = await loadConfig(
+        configFiles(config ?? [], {
+          globalBase: joinPath(WK_CONFIG_HOME, 'config'),
+          localBase: joinPath(process.cwd(), 'wk'),
+        }),
+      )
 
       let timeoutTimerId: ReturnType<typeof setTimeout> | undefined
       const handleTimeout = () => {

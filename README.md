@@ -152,3 +152,17 @@ bindings:
         buffer: 'npm run test'
         accept: true
 ```
+
+### Reading other files
+
+`wk run --config <file>` (`-c`) reads the named file instead of the global and local ones. Repeat it
+to layer several files: each one is laid over the ones before it, by the same rules as above.
+
+```sh
+wk run -c ~/.config/wk/tmux.yaml
+wk run -c ~/.config/wk/config.yaml -c ~/.config/wk/tmux.yaml # keep the global config: section
+```
+
+This lets a menu opened somewhere else, such as a tmux popup, have bindings of its own without the
+working directory's `wk.yaml` mixing in. A named path is read as written, with no `.yml` tried in its
+place, and a missing one stops wk instead of being skipped.

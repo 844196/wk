@@ -189,3 +189,55 @@ YAML
   assert_equal "$status" 4
 }
 
+@test "--config replaces the global and local files, layering repeats in order" {
+  write_global <<'YAML'
+bindings:
+  - key: g
+    type: command
+    buffer: from-global
+YAML
+  write_local <<'YAML'
+bindings:
+  - key: l
+    type: command
+    buffer: from-local
+YAML
+  cat >base.yaml <<'YAML'
+config:
+  outputDelimiter: ','
+bindings:
+  - key: t
+    type: command
+    buffer: from-base
+YAML
+  cat >tmux.yaml <<'YAML'
+bindings:
+  - key: t
+    type: command
+    buffer: from-tmux
+YAML
+
+  wk_run --config base.yaml -c tmux.yaml --inputs 't'
+  assert_equal "$status" 0
+  assert_equal "$output" ',,from-tmux'
+
+  wk_run --config base.yaml --inputs 'g'
+  assert_equal "$status" 5
+
+  wk_run --config base.yaml --inputs 'l'
+  assert_equal "$status" 5
+}
+
+@test "a missing file named by --config stops wk" {
+  write_global <<'YAML'
+bindings:
+  - key: l
+    type: command
+    buffer: ls
+YAML
+
+  wk_run --config tmux.yaml --inputs 'l'
+
+  assert_equal "$status" 7
+  assert_equal "$stderr" 'tmux.yaml: no such file or directory'
+}
