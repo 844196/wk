@@ -6,6 +6,26 @@ function shellQuote(key: string) {
   return key === "'" ? `"'"` : `'${key}'`
 }
 
+export type WidgetOptions = {
+  wkPath: string
+  leader?: string
+  majorLeader?: string
+  majorPrefix: string
+  bindGlobal: boolean
+}
+
+// The zsh code `wk init` prints. `wkPath` is the binary the widget runs, which
+// is `process.execPath` in a compiled wk.
+export function renderWidget({ wkPath, leader, majorLeader, majorPrefix, bindGlobal }: WidgetOptions): string {
+  return new Eta().renderString(WIDGET_TEMPLATE, {
+    wk_path: wkPath,
+    leader: leader === undefined ? undefined : shellQuote(leader),
+    majorLeader: majorLeader === undefined ? undefined : shellQuote(majorLeader),
+    majorPrefix: shellQuote(majorPrefix),
+    bindGlobal,
+  })
+}
+
 export const initCommand = new Command()
   .description('Render the widget for zsh.')
   .option('--leader <KEY:string>', 'Key to trigger the wk.')
@@ -22,15 +42,5 @@ export const initCommand = new Command()
 The major-prefix "m" is used for the major menu.`,
   )
   .action(({ leader, majorLeader, majorPrefix, bindGlobal = false }) => {
-    const eta = new Eta()
-
-    const rendered = eta.renderString(WIDGET_TEMPLATE, {
-      wk_path: process.execPath,
-      leader: leader === undefined ? undefined : shellQuote(leader),
-      majorLeader: majorLeader === undefined ? undefined : shellQuote(majorLeader),
-      majorPrefix: shellQuote(majorPrefix),
-      bindGlobal,
-    })
-
-    console.log(rendered)
+    console.log(renderWidget({ wkPath: process.execPath, leader, majorLeader, majorPrefix, bindGlobal }))
   })
