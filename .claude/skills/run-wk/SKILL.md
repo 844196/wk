@@ -9,7 +9,7 @@ description: Run wk against a throwaway config and see what it actually does. Us
 
 | 触ったもの | サブコマンド | 見えるもの |
 |---|---|---|
-| キー処理・出力形式・終了コード — `src/main.ts` `src/run.ts` | `keys` | 終了コードと stdout/stderr |
+| キー処理・出力形式・終了コード — `src/main.ts` `src/run.ts` `src/output.ts` `src/config.ts` | `keys` | 終了コードと stdout/stderr |
 | 描画・色・記号・パンくず — `src/ui.ts` `src/tui.ts` | `screen` | キーごとの画面 (TUI のスクリーンショット) |
 | ウィジェット — `src/widget.eta` `src/init.ts` | `widget` | 実 zsh の `BUFFER` と `CURSOR` |
 
