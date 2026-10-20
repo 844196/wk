@@ -7,12 +7,12 @@ zsh向けのwhich-keyライクメニュー。Bun製CLI (`src/wk.ts`) と、そ�
 `wk run` はTUIを `/dev/tty` に描き、選ばれた結果だけを標準出力に出す。それを `_wk_widget` が読んで `BUFFER` へ差し込む。この受け渡しは `src/run.ts` (出力の組み立ては `src/output.ts` の `formatOutput`) と `src/widget.eta` の間の契約で、片方だけ変えると壊れる。
 
 - 出力形式: 先頭1文字が区切り文字、以降はその区切り文字で連結された `buffer` + `key:value` 列 (`eval:true`, `accept:true` など)。区切り文字はbindingの `delimiter`、無ければconfigの `outputDelimiter`。
-- 終了コード: 0成功/3中断/4タイムアウト/5未定義キー/6キーパース失敗/7設定ファイル不正。`widget.eta` の `case` がこれで分岐し、それ以外は `zle -M` でエラー表示に回る。
-- エラー種別を増やすときは `src/errors.ts`・`run.ts` のcatch・`widget.eta` のcaseをセットで触る。
+- 終了コード: 0成功/3中断/4タイムアウト/5未定義キー/6キーパース失敗/7設定ファイル不正。`widget.eta` の `case` は 0 で `BUFFER` に差し込み、3・4 では黙って戻り、それ以外 (5〜7 を含む) は `zle -M` でエラー表示に回す。
+- エラー種別を増やすときは `src/errors.ts`・`run.ts` のcatch・`widget.eta` の `case` をセットで見る。新しいコードは何もしなければ `zle -M` の枝に入るので、黙らせたいときだけ枝を足す。どちらでも `*)` のコメントにある番号の一覧は更新する。
 
 ## スキーマは `src/schema.ts` が SSoT
 
-`key`/`desc`/`buffer` などのフィールドを増減させたら、触るのは `src/schema.ts` と `README.md` の設定例だけ。
+`key`/`desc`/`buffer` などのフィールドを増減させたら、定義を触るのは `src/schema.ts` だけで、あとは `README.md` の設定例と `src/schema.test.ts` を合わせる。型も既定値も別の場所には書かない。
 
 - `src/schema.ts` — `zod/mini` のスキーマ。型 (`Binding`/`Command`/`Context`/`Color`) は `z.infer` で導出、既定値は `z._default`/`z.prefault` が持ち、`defaultContext` は `ContextSchema.parse({})`。手書きの型定義は無い。
 - 設定ファイルはglobalの `$XDG_CONFIG_HOME/wk/config.ya?ml` とlocalの `$PWD/wk.ya?ml` の2つで、どちらも `FileSchema` (`config:` + `bindings:`、トップレベルはstrict) の同じ形。`.yaml` があれば `.yml` は読まない。読み込みと重ね合わせは `src/config.ts` の `loadConfig` で、localの `config:` は `mergeContext` でフィールド単位に重ね、既定値はマージの後で `resolveContext` が埋める — 各ファイルの段階で埋めるとlocalの既定値がglobalの値を消す。`wk run --config` (複数可) を渡すと既定の2枚は読まず、指定ファイルだけを同じ規則で左から重ねる。ファイルの選び方は `configFiles` にあり、明示したパスは拡張子を補わず、無ければ黙って飛ばさず exit 7。
