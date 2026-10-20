@@ -15,7 +15,7 @@ zsh向けのwhich-keyライクメニュー。Bun製CLI (`src/wk.ts`) と、そ�
 `key`/`desc`/`buffer` などのフィールドを増減させたら、触るのは `src/schema.ts` と `README.md` の設定例だけ。
 
 - `src/schema.ts` — `zod/mini` のスキーマ。型 (`Binding`/`Command`/`Context`/`Color`) は `z.infer` で導出、既定値は `z._default`/`z.prefault` が持ち、`defaultContext` は `ContextSchema.parse({})`。手書きの型定義は無い。
-- 設定ファイルはglobalの `$XDG_CONFIG_HOME/wk/config.ya?ml` とlocalの `$PWD/wk.ya?ml` の2つで、どちらも `FileSchema` (`config:` + `bindings:`、トップレベルはstrict) の同じ形。`.yaml` があれば `.yml` は読まない。読み込みと重ね合わせは `src/config.ts` の `loadConfig` で、localの `config:` は `mergeContext` でフィールド単位に重ね、既定値はマージの後で `resolveContext` が埋める — 各ファイルの段階で埋めるとlocalの既定値がglobalの値を消す。
+- 設定ファイルはglobalの `$XDG_CONFIG_HOME/wk/config.ya?ml` とlocalの `$PWD/wk.ya?ml` の2つで、どちらも `FileSchema` (`config:` + `bindings:`、トップレベルはstrict) の同じ形。`.yaml` があれば `.yml` は読まない。読み込みと重ね合わせは `src/config.ts` の `loadConfig` で、localの `config:` は `mergeContext` でフィールド単位に重ね、既定値はマージの後で `resolveContext` が埋める — 各ファイルの段階で埋めるとlocalの既定値がglobalの値を消す。`wk run --config` (複数可) を渡すと既定の2枚は読まず、指定ファイルだけを同じ規則で左から重ねる。ファイルの選び方は `configFiles` にあり、明示したパスは拡張子を補わず、無ければ黙って飛ばさず exit 7。
 - 配布用JSON Schemaはコミットしていない。`mise run generate:schemas` が両ファイル共通の `dist/schemas/config.json` を吐き、`mise run dist <name>` が `dist/wk` と一緒にリリースtarball (`<name>/{wk,LICENSE,schemas/}`) に詰める。生成は `io: 'input'` — ユーザーが書ける形を出す。
 - `zod/mini` はロケールを積まないので、`error` を渡し忘れた検査は `Invalid input` になる。フィールドを足したら必ず `expected(...)` を渡し、既存の入力を一通り流して `Invalid input` が出ないことを見る。
 - 設定エラーは `<ファイル>: <パス>: <期待>` の1行で exit 7。パスはzodのissueの `path` から `bindings[0].bindings[0].key` / `config.colors.prompt` の形に組む。
