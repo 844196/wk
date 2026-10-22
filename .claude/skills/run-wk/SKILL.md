@@ -66,18 +66,19 @@ tmux ペインで `wk run` を起動し、キーを 1 つ送るたびに `captur
 $ WK_CONFIG=e2e/fixtures/nested.yaml ./.claude/skills/run-wk/driver.sh screen g p
 === menu ===
 
+ l ➜ List
  d ➜ +Docker
  g ➜ +Git
- l ➜ List
 === after 'g' ===
  g
- p ➜ +Push
  y ➜ Pull
+ p ➜ +Push
 === after 'p' ===
  g » p
  f ➜ Force
 ```
 
+- 並びは YAML の順ではない。どの階層でも、コマンドがグループより先、英数字キーが記号キーより先、その中を描かれる記号で大文字先に並べる (`src/config.ts` の `sortBindings`)。上の `y` が `p` より前なのはこのため。
 - パンくずに並ぶのは desc ではなく押したキー。
 - `type: command` を選ぶと wk が終了してペインも消えるので、リーフまで降りた後の画面は無い (`(wk exited — ...)` と出る)。選んだ結果は `keys` で見る。
 - 1 行目は空行に見えるが、既定のプロンプト記号 U+F460 (Nerd Font のグリフ) が描かれている。パンくず行の頭もこの記号で、半角スペースではない。画面を grep するならバインディングの行を狙う。記号を確かめるなら `od -c` (`357 221 240` = U+F460、`302 273` = `»`)。
@@ -142,4 +143,13 @@ BUFFER=[make test] CURSOR=[9]
 - 設定エラーは exit 7 と stderr の 1 行 (`.../config.yaml: bindings[0].bindings[0].key: expected a key name or a digit 0-9`)。`screen` では `wk exited before drawing a menu` としか出ないので `keys` で読む。v1 形式 (トップレベルの `timeout:` など) も `unknown field "timeout"` でここに来る。
 - 空のファイル (0 バイト、コメントだけ、`---`、`null` など) はファイルが無いのと同じ扱いになる。global も local も空ならすべてのキーが未定義で exit 5。
 - 同じ場所に `config.yaml` と `config.yml` があれば `.yaml` だけを読み、`.yml` は壊れていても黙って無視する。`.yml` を直しても効かないときはこれを疑う。v1 の `bindings.yaml` / `wk.bindings.yaml` も読まれず、エラーも出ないままメニューが空になる。
+- `wk run -c` を通すには `WK_RUN_CONFIG` に `:` 区切りでファイルを並べる (3 層すべてに効く。相対パスは呼んだ場所から解決)。渡すと wk は既定の 2 枚を読まないので、`WK_CONFIG` / `WK_LOCAL` は効かなくなる。並べたファイルは左から重なる。無いファイルを渡すと黙って飛ばさず exit 7 (`<path>: no such file or directory`)。widget 層は zstyle の `options` 経由で渡すので、空白を含むパスはこの層では通らない。
+
+  ```bash
+  $ WK_RUN_CONFIG=e2e/fixtures/widget.yaml:$SP/popup.yaml ./.claude/skills/run-wk/driver.sh keys g p
+  exit:   0  (selected a command)
+  stdout: \t\tgit push
+  stderr:
+  ```
+
 - local の `bindings:` は、同じキーを持つ global のバインディングをグループごと置き換える (中の bindings は混ざらない)。1 つのファイルの中で同じキーが重なったら、先に書いた方だけが表示され、選ばれるのもそちら。

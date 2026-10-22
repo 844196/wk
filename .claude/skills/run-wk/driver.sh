@@ -22,6 +22,8 @@
 #   WK_TARGET    Bun build target (default: bun-linux-x64)
 #   WK_CONFIG    global config.yaml to seed (default: e2e/fixtures/widget.yaml)
 #   WK_LOCAL     local wk.yaml to drop in the sandbox cwd (default: none)
+#   WK_RUN_CONFIG  ':'-separated files passed as `wk run -c` (default: none).
+#                Then wk reads only these, and WK_CONFIG / WK_LOCAL are ignored
 #   WK_ZSHRC     file of extra zsh lines appended to the widget layer's .zshrc
 #   WK_REAL_ACCEPT=1   widget layer: let `accept: true` really run the command
 #   WK_BIND_GLOBAL=1   widget layer: `wk init --bind-global`, so the leader fires
@@ -62,6 +64,21 @@ bin="${WK_BIN:-${root}/dist/wk}"
 # an empty file into the same absent-file handling, so the two now behave
 # alike, but seeding a file and seeding none stay separate cases to set up.
 config="${WK_CONFIG-${root}/e2e/fixtures/widget.yaml}"
+
+# WK_RUN_CONFIG is passed by path, not seeded: a missing file is something to
+# reproduce (wk exits 7 for a named path it cannot read), and copying would
+# turn that into a driver failure. Relative paths are resolved here, while $PWD
+# is still the caller's, because every layer runs wk from the sandbox cwd.
+run_cfg_args=()
+if [[ -n "${WK_RUN_CONFIG:-}" ]]; then
+  IFS=: read -r -a _cfgs <<<"$WK_RUN_CONFIG"
+  for _c in "${_cfgs[@]}"; do
+    [[ -z "$_c" ]] && continue
+    [[ "$_c" == /* ]] || _c="${PWD}/${_c}"
+    run_cfg_args+=(-c "$_c")
+  done
+  unset _cfgs _c
+fi
 
 # 125 is deliberately outside wk's range (0-7) and distinct from the 124 that
 # `keys` reports for a wk still waiting on a key, so a caller can always tell
@@ -326,7 +343,7 @@ cmd_keys() {
   local out="${sandbox}/out" err="${sandbox}/err" st="${sandbox}/status"
   local inner
   inner=$(sandbox_env)
-  inner+=$(printf '%q ' "$bin" run --up-one-line false)
+  inner+=$(printf '%q ' "$bin" run --up-one-line false "${run_cfg_args[@]}")
   [[ $# -gt 0 ]] && inner+=$(printf '%q %q ' --inputs "$*")
   inner+=$(printf '>%q 2>%q; printf %%s "$?" >%q' "$out" "$err" "$st")
 
@@ -379,7 +396,7 @@ explain_exit() {
     4) echo '(timeout — config.timeout elapsed)' ;;
     5) echo '(undefined key)' ;;
     6) echo '(key parse failure)' ;;
-    7) echo '(bad config.yaml or wk.yaml — stderr names the file and the field)' ;;
+    7) echo '(bad or missing config file — stderr names the file and the field)' ;;
     124) echo '(driver timeout: wk was still waiting for a key)' ;;
     *) echo '(unknown)' ;;
   esac
@@ -396,7 +413,7 @@ cmd_screen() {
 
   local upone="${WK_UP_ONE_LINE:-auto}"
   tmx -f /dev/null new-session -d -x "${WK_COLS:-80}" -y "${WK_ROWS:-24}" -c "${sandbox}/cwd" \
-    "$(sandbox_env)$(printf '%q ' "$bin" run --up-one-line "$upone")" ||
+    "$(sandbox_env)$(printf '%q ' "$bin" run --up-one-line "$upone" "${run_cfg_args[@]}")" ||
     die 'tmux could not start a session. Check that tmux is installed and that WK_COLS/WK_ROWS are numbers'
 
   # The menu is drawn before any key is read; wait for anything to land on the
@@ -504,7 +521,11 @@ cmd_widget() {
       echo "zstyle ':wk:*' accept-widget _wk_fake_accept"
     fi
     # Pinned: `auto` would depend on where the prompt happens to sit.
-    echo "zstyle ':wk:*' options '--up-one-line' 'false'"
+    # printf '%q ' with no arguments still prints '', which would hand wk an
+    # empty positional argument, so the -c pairs are joined only when present.
+    # The widget word-splits each element (${=opts}), so a path with a space in
+    # it does not survive this layer.
+    echo "zstyle ':wk:*' options '--up-one-line' 'false'${run_cfg_args[*]:+ $(printf '%q ' "${run_cfg_args[@]}")}"
     echo "eval \"\$($(printf '%q' "$bin") init ${init_args})\""
     # Extra zsh lines, appended last so they can override anything above. The
     # trailing echo is load-bearing: a WK_ZSHRC without a final newline would
