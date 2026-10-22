@@ -1,3 +1,5 @@
+min_version = "2026.10.17"
+
 [tools]
 bun = '1.4.4'
 biome = '2.5.15'
@@ -69,7 +71,7 @@ run = './e2e/run.sh'
 [tasks."gha:lint"]
 tools.actionlint = "1.7.10"
 tools.ghalint = "1.5.4"
-run = ["actionlint", "ghalint run"]
+run = ["actionlint", "ghalint run", "ghalint run-action"]
 
 [tasks."gha:pin"]
 tools.pinact = "4.1.1"

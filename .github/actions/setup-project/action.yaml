@@ -4,10 +4,21 @@ description: Setup project
 runs:
   using: composite
   steps:
+    - name: Read mise version
+      id: mise-version
+      shell: bash
+      run: |
+        version=$(sed -nE 's/^min_version = "(.+)"$/\1/p' mise.toml)
+        if [[ -z "$version" ]]; then
+          echo '::error file=mise.toml::min_version is not found'
+          exit 1
+        fi
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+
     - name: Setup mise
       uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
       with:
-        version: 2026.10.17
+        version: ${{ steps.mise-version.outputs.version }}
 
     - name: Install dependencies
       shell: bash
