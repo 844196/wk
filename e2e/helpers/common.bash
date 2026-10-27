@@ -70,7 +70,8 @@ wk_run() {
   wk_stdout_file="${BATS_TEST_TMPDIR}/wk.stdout"
   wk_stderr_file="${BATS_TEST_TMPDIR}/wk.stderr"
   local status_file="${BATS_TEST_TMPDIR}/wk.status"
-  rm -f "$wk_stdout_file" "$wk_stderr_file" "$status_file"
+  local stdin_fifo="${BATS_TEST_TMPDIR}/wk.stdin"
+  rm -f "$wk_stdout_file" "$wk_stderr_file" "$status_file" "$stdin_fifo"
 
   local command
   command=$(printf '%q ' "$WK_BIN" run --up-one-line false "$@")
@@ -80,9 +81,16 @@ wk_run() {
   # script(1) supplies the /dev/tty that `wk run` opens. Its own output is
   # noise (pty echo), so it is discarded; the real streams are redirected
   # inside the pty and stay byte-exact.
+  #
+  # script(1)'s stdin is a FIFO opened read-write, not bats' stdin. When its
+  # stdin reaches EOF, script(1) writes ^D into the pty, and wk reads that as a
+  # key once --inputs runs out: in raw mode that is ctrl+d, which aborts with 3.
+  # Holding the write end itself, script(1) never sees EOF, and no writer
+  # process outlives it.
+  mkfifo "$stdin_fifo"
   local script_status=0
   SHELL=/bin/bash timeout "${WK_E2E_RUN_TIMEOUT:-15}" \
-    script -qec "$command" /dev/null >/dev/null 2>&1 || script_status=$?
+    script -qec "$command" /dev/null <>"$stdin_fifo" >/dev/null 2>&1 || script_status=$?
 
   if [[ -f "$status_file" ]]; then
     status=$(cat "$status_file")
