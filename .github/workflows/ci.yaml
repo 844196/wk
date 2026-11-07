@@ -24,12 +24,12 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
       - name: Setup project
-        uses: ./.github/actions/setup-project
+        uses: $/.github/actions/setup-project
 
       - name: Run check
         run: mise run check
@@ -42,12 +42,12 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
       - name: Setup project
-        uses: ./.github/actions/setup-project
+        uses: $/.github/actions/setup-project
 
       - name: Run test
         run: mise run test
@@ -60,12 +60,34 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
       - name: Setup project
-        uses: ./.github/actions/setup-project
+        uses: $/.github/actions/setup-project
 
       - name: Run e2e
         run: mise run e2e
+
+  # The actions only release.yaml uses don't run until a tag is pushed, so a bad pin for one of them
+  # has to be caught here rather than by the runner.
+  lockfile:
+    name: Lockfile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup project
+        uses: $/.github/actions/setup-project
+
+      - name: Run verify
+        run: mise run gha:verify
+        env:
+          GH_TOKEN: ${{ github.token }}

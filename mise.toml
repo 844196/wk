@@ -5,6 +5,9 @@ bun = '1.4.4'
 biome = '2.5.15'
 lefthook = "2.0.15"
 "github:convco/convco" = "0.6.2"
+# Its release assets are named after the platform alone (`linux-amd64`), so the
+# binary has to be renamed explicitly.
+"github:github/gh-actions-lock" = { version = "0.4.1", bin = "gh-actions-lock" }
 
 [hooks]
 postinstall = "lefthook install"
@@ -70,9 +73,18 @@ run = './e2e/run.sh'
 
 [tasks."gha:lint"]
 tools.actionlint = "1.7.10"
-tools.ghalint = "1.5.4"
-run = ["actionlint", "ghalint run", "ghalint run-action"]
+tools.ghalint = "1.6.0"
+run = [
+  "actionlint",
+  "ghalint run",
+  "ghalint run-action",
+  "gh-actions-lock --verify-local",
+]
 
-[tasks."gha:pin"]
-tools.pinact = "4.1.1"
-run = ["pinact run --fix"]
+[tasks."gha:lock"]
+description = 'Regenerate .github/workflows/actions.lock from the uses: references'
+run = "gh-actions-lock"
+
+[tasks."gha:verify"]
+description = 'Check actions.lock against the workflows and the upstream repositories'
+run = "gh-actions-lock --verify"

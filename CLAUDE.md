@@ -38,4 +38,7 @@ Conventional Commits (convcoがcommit-msgフックで検証)。`git log` の大�
 typeは `.versionrc` の一覧、scopeは `deps` と `ci` のみ許可。
 コーディングエージェント関係の Markdown (e.g. `CLAUDE.md`, `SKILL.md`) の追加・変更・削除は wk を使うユーザーには関係がないため `chore` として扱うこと。
 
-`.github/workflows` を触ったらactionはSHA固定 (`mise run gha:pin`)。pre-commitの `gha:lint` が未固定を弾く。
+actionは `.github/workflows/actions.lock` で固定する。`uses:` はフルバージョンのタグで書き、変えたら `mise run gha:lock` で作り直して一緒にコミットする (手で編集しない)。pre-commitの `gha:lint` がlockfileに無い `uses:` を弾き、CIの `gha:verify` が上流との一致を確かめる。
+
+- 同じリポジトリのactionは `$/` で参照する。`./` だとlockfileが中の依存を追えず、`gha:lock` がエラーになる。
+- `.github/actions` の中で新しいactionを使うときは `.ghalint.yaml` の除外にも足す。ghalintはaction file内の参照をlockfileがあってもSHA固定で検査する。
