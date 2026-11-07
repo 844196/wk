@@ -4,3 +4,7 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # The scope is spelled out because `include: scope` writes `deps-dev` for
+    # development dependencies, which scopeRegex in .versionrc rejects.
+    commit-message:
+      prefix: chore(deps)
