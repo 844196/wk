@@ -22,7 +22,7 @@ run = 'biome format'
 run = 'biome lint --error-on-warnings'
 
 [tasks.'check:type']
-run = 'bun run tsc'
+run = 'bun check'
 
 # `--bun` keeps Vitest on Bun: under Node the `Bun` global the sources use is
 # undefined.
