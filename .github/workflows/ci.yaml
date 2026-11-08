@@ -70,6 +70,31 @@ jobs:
       - name: Run e2e
         run: mise run e2e
 
+  # The commit-msg hook doesn't see commits made outside a local clone, such as Dependabot's. Only the
+  # PR's own commits are checked: most of the older history uses gitmoji and would never pass.
+  commit-message:
+    name: Commit message
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup project
+        uses: $/.github/actions/setup-project
+
+      - name: Run convco
+        run: convco check "${BASE_SHA}..${HEAD_SHA}"
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+
   # The actions only release.yaml uses don't run until a tag is pushed, so a bad pin for one of them
   # has to be caught here rather than by the runner.
   lockfile:
