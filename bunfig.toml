@@ -1,0 +1,5 @@
+[fmt]
+printWidth = 120
+semi = false
+singleQuote = true
+ignorePatterns = ["/*", "!/src/", "!/scripts/", "!/vitest.config.ts"]
