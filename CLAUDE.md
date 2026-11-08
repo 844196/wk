@@ -33,7 +33,7 @@ e2eテストが `e2e/` にある。`mise run e2e` でバイナリをビルドし
 
 ## コミット
 
-Conventional Commits (convcoがcommit-msgフックで検証)。`git log` の大半は旧来のgitmoji形式なので真似しない。
+Conventional Commits (convcoがcommit-msgフックと、CIの `commit-message` ジョブがPRのコミットを検証)。`git log` の大半は旧来のgitmoji形式なので真似しない。
 
 typeは `.versionrc` の一覧、scopeは `deps` と `ci` のみ許可。
 コーディングエージェント関係の Markdown (e.g. `CLAUDE.md`, `SKILL.md`) の追加・変更・削除は wk を使うユーザーには関係がないため `chore` として扱うこと。
