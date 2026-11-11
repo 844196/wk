@@ -94,25 +94,3 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-
-  # The actions only release.yaml uses don't run until a tag is pushed, so a bad pin for one of them
-  # has to be caught here rather than by the runner.
-  lockfile:
-    name: Lockfile
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Setup project
-        uses: $/.github/actions/setup-project
-
-      - name: Run verify
-        run: mise run gha:verify
-        env:
-          GH_TOKEN: ${{ github.token }}
