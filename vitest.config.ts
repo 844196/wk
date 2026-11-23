@@ -16,5 +16,8 @@ export default defineConfig({
   ],
   test: {
     include: ['src/**/*.test.ts'],
+    // The forks pool's watchdog calls `child.channel.unref()`, which Bun's
+    // `child_process` lacks: https://github.com/oven-sh/bun/issues/33593
+    pool: 'threads',
   },
 })
